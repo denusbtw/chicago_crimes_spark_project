@@ -2,7 +2,7 @@ import os
 from collections import Counter
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.types import NumericType
+from pyspark.sql.types import NumericType, IntegerType, DoubleType, BooleanType, TimestampType, StringType
 
 from extractor import load_crime_data, validate_dataframe
 
@@ -75,6 +75,68 @@ def numeric_statistics(df):
         df.select(numeric_cols).describe().show()
 
 
+def drop_columns(df):
+    columns_to_drop = [
+        "ID",
+        "Case Number",
+        "X Coordinate",
+        "Y Coordinate",
+        "Location",
+        "Year",
+    ]
+    return df.drop(*columns_to_drop)
+
+
+def feature_informativeness_analysis(df):
+    print("===== FEATURE INFORMATIVENESS ANALYSIS =====")
+
+    total_rows = df.count()
+
+    for field in df.schema.fields:
+        col_name = field.name
+        dtype = field.dataType
+
+        print(f"\n--- Column: {col_name} ({dtype.simpleString()}) ---")
+
+        if isinstance(dtype, StringType):
+
+            distinct_count = df.select(col_name).distinct().count()
+
+            top_freq = (
+                df.groupBy(col_name)
+                  .count()
+                  .orderBy(F.desc("count"))
+                  .limit(1)
+            ).collect()
+
+            if top_freq:
+                top_value = top_freq[0][0]
+                top_count = top_freq[0][1]
+                ratio = round(top_count / total_rows, 4)
+
+                print(f"Distinct values: {distinct_count}")
+                print(f"Most frequent value: {top_value}")
+                print(f"Dominance ratio: {ratio}")
+            else:
+                print("No data.")
+
+        elif isinstance(dtype, (IntegerType, DoubleType)):
+
+            stats = df.select(
+                F.variance(col_name).alias("variance"),
+                F.stddev(col_name).alias("stddev")
+            ).collect()[0]
+
+            print(f"Variance: {stats['variance']}")
+            print(f"Stddev: {stats['stddev']}")
+
+        elif isinstance(dtype, (BooleanType, TimestampType)):
+            print("Skipped (boolean/timestamp).")
+
+        else:
+            print("Skipped (other type).")
+
+
 if __name__ == "__main__":
     spark = SparkSession.builder.appName("ChicagoCrimes").getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
@@ -83,4 +145,4 @@ if __name__ == "__main__":
     df = load_crime_data(spark, path)
 
     validate_dataframe(df)
-    numeric_statistics(df)
+    feature_informativeness_analysis(df)
