@@ -1,27 +1,12 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType
 
-spark = SparkSession.builder \
-    .appName("Test DataFrame") \
-    .master("local[*]") \
-    .getOrCreate()
+from extractor import load_crime_data, validate_dataframe
 
-schema = StructType([
-    StructField("id", IntegerType(), True),
-    StructField("name", StringType(), True),
-    StructField("age", IntegerType(), True)
-])
 
-data = [
-    (1, "Vadym", 19),
-    (2, "Maryna", 19),
-    (3, "Yan", 19),
-    (4, "Denys", 19)
-]
+if __name__ == "__main__":
+    spark = SparkSession.builder.appName("ChicagoCrimes").getOrCreate()
+    spark.sparkContext.setLogLevel("ERROR")
 
-df = spark.createDataFrame(data, schema=schema)
+    df = load_crime_data(spark, "data/chicago_crimes.csv")
 
-df.show()
-df.printSchema()
-
-spark.stop()
+    validate_dataframe(df)
