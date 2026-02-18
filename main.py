@@ -137,6 +137,56 @@ def feature_informativeness_analysis(df):
             print("Skipped (other type).")
 
 
+def missing_and_duplicates_analysis(df):
+    missing_summary = df.select([
+        F.count(F.when(F.col(c).isNull(), c)).alias(c)
+        for c in df.columns
+    ])
+    print("Пропущені значення по колонках:")
+    missing_summary.show(truncate=False)
+
+    total_rows = df.count()
+    missing_percent = df.select([
+        (F.count(F.when(F.col(c).isNull(), c)) / total_rows * 100).alias(c)
+        for c in df.columns
+    ])
+    print("Відсоток пропусків по колонках:")
+    missing_percent.show(truncate=False)
+
+    duplicate_count = df.count() - df.dropDuplicates().count()
+    print(f"Кількість дублікатів: {duplicate_count}")
+
+    return df
+
+
+def handle_missing(df):
+    df = df.fillna({
+        "Primary Type": "Unknown",
+        "Description": "Unknown",
+        "Location Description": "Unknown"
+    })
+
+    df = df.filter(
+        (F.col("Date").isNotNull()) &
+        (F.col("Latitude").isNotNull()) &
+        (F.col("Longitude").isNotNull())
+    )
+
+    df = df.withColumn(
+        "Ward",
+        F.when(F.col("Ward").isNull() | (F.col("Ward") == 0), F.lit(-1)).otherwise(F.col("Ward"))
+    )
+
+    df = df.withColumn(
+        "Community Area",
+        F.when(F.col("Community Area").isNull() | (F.col("Community Area") == 0), F.lit(-1)).otherwise(F.col("Community Area"))
+    )
+
+    df = df.filter(F.col("District").isNotNull() & (F.col("District") != "0"))
+
+    return df
+
+
 if __name__ == "__main__":
     spark = SparkSession.builder.appName("ChicagoCrimes").getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
@@ -145,4 +195,3 @@ if __name__ == "__main__":
     df = load_crime_data(spark, path)
 
     validate_dataframe(df)
-    feature_informativeness_analysis(df)
