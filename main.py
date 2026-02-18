@@ -68,6 +68,13 @@ def general_dataset_statistics(df, source_path = "data/chicago_crimes.csv"):
     total_nulls.show(truncate=False)
 
 
+def numeric_statistics(df):
+    numeric_cols = [f.name for f in df.schema.fields if isinstance(f.dataType, NumericType)]
+    print("NUMERIC COLUMNS:", numeric_cols)
+    if numeric_cols:
+        df.select(numeric_cols).describe().show()
+
+
 if __name__ == "__main__":
     spark = SparkSession.builder.appName("ChicagoCrimes").getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
@@ -76,4 +83,4 @@ if __name__ == "__main__":
     df = load_crime_data(spark, path)
 
     validate_dataframe(df)
-    general_dataset_statistics(df, path)
+    numeric_statistics(df)
