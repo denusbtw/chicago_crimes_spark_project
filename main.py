@@ -213,6 +213,12 @@ def run_analysis(df):
         ("Q4: Злочини за 2026 рік", lambda: q4_crimes_by_year_2026(df)),
         ("Q5: Вуличні злочини в нічний час", lambda: q5_crimes_on_streets_at_night(df)),
         ("Q6: Випадки, пов'язані з наркотиками", lambda: q6_narcotics_cases(df)),
+        ("Q7: Злочини з наявними геокординатами для мапування", lambda: q7_crimes_with_valid_coordinates(df)),
+        ("Q8: Злочини у 42-му варді", lambda: q8_specific_ward_analysis(df)),
+        ("Q9: Загальна кількість за типом злочину", lambda: q9_count_by_crime_type(df)),
+        ("Q10: Відсоток арештів по районах", lambda: q10_arrest_rate_by_district(df)),
+        ("Q11: Розподіл злочинів за місяцями", lambda: q11_crimes_per_month(df)),
+        ("Q12: Топ-5 типів локації за частотою злочинів", lambda: q12_top_location_types(df)),
     ]
 
     for i, (title, query_func) in enumerate(queries, start=1):

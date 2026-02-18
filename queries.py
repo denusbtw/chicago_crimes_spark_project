@@ -31,3 +31,33 @@ def q6_narcotics_cases(df: DataFrame):
     """Випадки, пов'язані з наркотиками (Primary Type)."""
     res = df.filter(F.col("Primary Type") == "NARCOTICS")
     return res
+
+def q7_crimes_with_valid_coordinates(df: DataFrame):
+    """Злочини з наявними геокоординатами для мапування."""
+    res = df.filter(F.col("Latitude").isNotNull() & F.col("Longitude").isNotNull())
+    return res
+
+def q8_specific_ward_analysis(df: DataFrame):
+    """Злочини у 42-му варді."""
+    res = df.filter(F.col("Ward") == "42")
+    return res
+
+def q9_count_by_crime_type(df: DataFrame):
+    """Загальна кількість за типом злочину."""
+    res = df.groupBy("Primary Type").count().orderBy(F.desc("count"))
+    return res
+
+def q10_arrest_rate_by_district(df: DataFrame):
+    """Відсоток арештів по районах."""
+    res = df.groupBy("District").agg(F.avg(F.col("Arrest").cast("double")).alias("arrest_rate"))
+    return res
+
+def q11_crimes_per_month(df: DataFrame):
+    """Розподіл злочинів за місяцями."""
+    res = df.groupBy(F.month("Date").alias("month")).count().orderBy("month")
+    return res
+
+def q12_top_location_types(df: DataFrame):
+    """Топ-5 типів локацій за частотою злочинів."""
+    res = df.groupBy("Location Description").count().orderBy(F.desc("count")).limit(5)
+    return res
