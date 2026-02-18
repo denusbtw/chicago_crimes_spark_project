@@ -1,27 +1,18 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+from schemas import crime_schema
 
-spark = SparkSession.builder \
-    .appName("Test DataFrame") \
-    .master("local[*]") \
-    .getOrCreate()
 
-schema = StructType([
-    StructField("id", IntegerType(), True),
-    StructField("name", StringType(), True),
-    StructField("age", IntegerType(), True)
-])
+if __name__ == "__main__":
+    spark = SparkSession.builder.appName("ChicagoCrimes").getOrCreate()
+    spark.sparkContext.setLogLevel("ERROR")
 
-data = [
-    (1, "Vadym", 19),
-    (2, "Maryna", 19),
-    (3, "Yan", 19),
-    (4, "Denys", 19)
-]
-
-df = spark.createDataFrame(data, schema=schema)
-
-df.show()
-df.printSchema()
-
-spark.stop()
+    path = "data/chicago_crimes.csv"
+    df = (
+        spark.read
+        .option("header", True)
+        .option("sep", ";")
+        .option("quote", '"')
+        .option("timestampFormat", "MM/dd/yyyy hh:mm:ss a")
+        .schema(crime_schema)
+        .csv(path)
+    )
