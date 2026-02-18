@@ -202,7 +202,7 @@ def write_single_csv(df, path, filename):
     shutil.rmtree(temp_dir)
 
 
-def run_analysis(df):
+def run_analysis(df, severity_df, districts_df):
     output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
 
@@ -219,6 +219,12 @@ def run_analysis(df):
         ("Q10: Відсоток арештів по районах", lambda: q10_arrest_rate_by_district(df)),
         ("Q11: Розподіл злочинів за місяцями", lambda: q11_crimes_per_month(df)),
         ("Q12: Топ-5 типів локації за частотою злочинів", lambda: q12_top_location_types(df)),
+        ("Q13: Кількість побутових злочинів за роками", lambda: q13_domestic_crimes_per_year(df)),
+        ("Q14: Статистика за кодами FBI", lambda: q14_fbi_code_distribution(df)),
+        ("Q15: Пікові години злочинності", lambda: q15_hourly_crime_frequency(df)),
+        ("Q16: Кількість унікальних справ для пар District/Ward", lambda: q16_district_ward_combinations(df)),
+        ("Q17: Злочини з доданим рівнем критичності", lambda: q17_crimes_with_severity(df, severity_df)),
+        ("Q18: Звіт з назвами районів замість номерів", lambda: q18_named_districts_report(df, districts_df)),
     ]
 
     for i, (title, query_func) in enumerate(queries, start=1):
@@ -241,4 +247,6 @@ if __name__ == "__main__":
     df = load_crime_data(spark, path)
 
     validate_dataframe(df)
-    run_analysis(df)
+
+    severity_df, districts_df = get_lookup_tables(spark)
+    run_analysis(df, severity_df, districts_df)

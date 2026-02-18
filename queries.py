@@ -2,6 +2,23 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
 
+def get_lookup_tables(spark):
+    severity_df = spark.createDataFrame([
+        ("HOMICIDE", "Critical"),
+        ("ROBBERY", "High"),
+        ("THEFT", "Medium"),
+        ("BATTERY", "Medium")
+    ], ["Primary Type", "Severity"])
+
+    districts_df = spark.createDataFrame([
+        ("001", "Central"),
+        ("002", "Wentworth"),
+        ("012", "Near West")
+    ], ["District", "District Name"])
+
+    return severity_df, districts_df
+
+
 def q1_high_value_thefts(df: DataFrame):
     """Крадіжки на суму понад $500."""
     res = df.filter((F.col("Primary Type") == "THEFT") & (F.col("Description") == "OVER $500"))
@@ -60,4 +77,34 @@ def q11_crimes_per_month(df: DataFrame):
 def q12_top_location_types(df: DataFrame):
     """Топ-5 типів локацій за частотою злочинів."""
     res = df.groupBy("Location Description").count().orderBy(F.desc("count")).limit(5)
+    return res
+
+def q13_domestic_crimes_per_year(df: DataFrame):
+    """Кількість побутових злочинів за роками."""
+    res = df.filter(F.col("Domestic") == True).groupBy(F.year("Date").alias("year")).count()
+    return res
+
+def q14_fbi_code_distribution(df: DataFrame):
+    """Статистика за кодами FBI."""
+    res = df.groupBy("FBI Code").count().orderBy(F.desc("count"))
+    return res
+
+def q15_hourly_crime_frequency(df: DataFrame):
+    """Пікові години злочинності."""
+    res = df.groupBy(F.hour("Date").alias("hour")).count().orderBy(F.desc("count"))
+    return res
+
+def q16_district_ward_combinations(df: DataFrame):
+    """Кількість унікальних справ для пар District/Ward."""
+    res = df.groupBy("District", "Ward").count()
+    return res
+
+def q17_crimes_with_severity(df: DataFrame, severity_df: DataFrame):
+    """Злочини з доданим рівнем критичності."""
+    res = df.join(severity_df, "Primary Type", "left")
+    return res
+
+def q18_named_districts_report(df: DataFrame, districts_df: DataFrame):
+    """Звіт з назвами районів замість номерів."""
+    res = df.join(districts_df, "District", "inner")
     return res
