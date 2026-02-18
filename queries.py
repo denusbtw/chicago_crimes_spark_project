@@ -1,4 +1,4 @@
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 
 
@@ -107,4 +107,41 @@ def q17_crimes_with_severity(df: DataFrame, severity_df: DataFrame):
 def q18_named_districts_report(df: DataFrame, districts_df: DataFrame):
     """Звіт з назвами районів замість номерів."""
     res = df.join(districts_df, "District", "inner")
+    return res
+
+def q19_critical_crimes_in_central(df: DataFrame, severity_df: DataFrame, districts_df: DataFrame):
+    """Критичні злочини в центральному районі."""
+    res = df.join(severity_df, "Primary Type").join(districts_df, "District") \
+            .filter((F.col("Severity") == "Critical") & (F.col("District Name") == "Central"))
+    return res
+
+def q20_unmatched_crime_types(df: DataFrame, severity_df: DataFrame):
+    """Типи злочинів, які відсутні в довіднику пріоритетів (Anti-join)."""
+    res = df.join(severity_df, "Primary Type", "left_anti")
+    return res
+
+def q21_rank_crimes_by_date_in_district(df: DataFrame):
+    """Порядковий номер злочину в межах кожного району за часом."""
+    window = Window.partitionBy("District").orderBy("Date")
+    res = df.withColumn("crime_order", F.row_number().over(window))
+    return res
+
+def q22_cumulative_crime_count_by_ward(df: DataFrame):
+    """Накопичувальний підсумок злочинів для кожного варду."""
+    window = Window.partitionBy("Ward").orderBy("Date").rowsBetween(Window.unboundedPreceding, Window.currentRow)
+    res = df.withColumn("running_total", F.count("Primary Type").over(window))
+    return res
+
+def q23_time_diff_between_crimes(df: DataFrame):
+    """Різниця в часі (в секундах) між поточним та попереднім злочином у районі."""
+    window = Window.partitionBy("District").orderBy("Date")
+    res = df.withColumn("prev_crime_time", F.lag("Date").over(window)) \
+            .withColumn("diff_seconds", F.unix_timestamp("Date") - F.unix_timestamp("prev_crime_time"))
+    return res
+
+def q24_top_crime_type_per_district(df: DataFrame):
+    """Найпопулярніший тип злочину для кожного району."""
+    counts = df.groupBy("District", "Primary Type").count()
+    window = Window.partitionBy("District").orderBy(F.desc("count"))
+    res = counts.withColumn("rank", F.rank().over(window)).filter(F.col("rank") == 1)
     return res

@@ -225,6 +225,15 @@ def run_analysis(df, severity_df, districts_df):
         ("Q16: Кількість унікальних справ для пар District/Ward", lambda: q16_district_ward_combinations(df)),
         ("Q17: Злочини з доданим рівнем критичності", lambda: q17_crimes_with_severity(df, severity_df)),
         ("Q18: Звіт з назвами районів замість номерів", lambda: q18_named_districts_report(df, districts_df)),
+        ("Q19: Критичні злочини в центральному районі",
+         lambda: q19_critical_crimes_in_central(df, severity_df, districts_df)),
+        ("Q20: Типи злочинів, які відсутні в довіднику пріоритетів",
+         lambda: q20_unmatched_crime_types(df, severity_df)),
+        ("Q21: Порядковий номер злочину в межах району за часом", lambda: q21_rank_crimes_by_date_in_district(df)),
+        ("Q22: Накопичувальний підсумок злочинів для кожного варду", lambda: q22_cumulative_crime_count_by_ward(df)),
+        ("Q23: Різниця в часі (в секундах) між поточним та попереднім злочином в районі",
+         lambda: q23_time_diff_between_crimes(df)),
+        ("Q24: Найпопулярніший тип злочину для кожного району", lambda: q24_top_crime_type_per_district(df)),
     ]
 
     for i, (title, query_func) in enumerate(queries, start=1):
