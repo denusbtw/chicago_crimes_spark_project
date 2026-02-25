@@ -1,261 +1,90 @@
-import glob
 import os
-import shutil
-from collections import Counter
+import sys
 from pyspark.sql import SparkSession
-from pyspark.sql.types import NumericType, IntegerType, DoubleType, BooleanType, TimestampType, StringType
 
 from extractor import load_crime_data, validate_dataframe
-from queries import *
+from data_processing import drop_columns, handle_missing, remove_structural_anomalies
+from data_stats import (
+    general_dataset_statistics,
+    numeric_statistics,
+    feature_informativeness_analysis,
+    missing_and_duplicates_analysis,
+    compute_correlation_matrix,
+    plot_correlation_matrix,
+    find_high_correlations,
+)
 
 
-def _dir_size_bytes(path: str) -> int:
-    total = 0
-    for root, _, files in os.walk(path):
-        for f in files:
-            fp = os.path.join(root, f)
-            if os.path.isfile(fp):
-                total += os.path.getsize(fp)
-    return total
+def start_stats(df, source_path: str, tag: str):
+    os.makedirs("stats", exist_ok=True)
+
+    with open(f"stats/dataset_stats_{tag}.txt", "w", encoding="utf-8") as f:
+        old_stdout = sys.stdout
+        sys.stdout = f
+        try:
+            total_rows, nulls_row = general_dataset_statistics(df, source_path=source_path, cache_df=False)
+            numeric_statistics(df)
+            missing_and_duplicates_analysis(df, total_rows=total_rows, nulls_row=nulls_row)
+            feature_informativeness_analysis(df, total_rows=total_rows)
+        finally:
+            sys.stdout = old_stdout
 
 
-def _human_gb(size_bytes: int) -> float:
-    return round(size_bytes / (1024 ** 3), 3)
+def start_corr(df, threshold=0.9, tag="clean"):
+    os.makedirs("stats", exist_ok=True)
 
+    corr_df = compute_correlation_matrix(df)
+    if corr_df is None:
+        return
 
-def general_dataset_statistics(df, source_path = "data/chicago_crimes.csv"):
-    print("===== SCHEMA =====")
-    df.printSchema()
+    corr_df.to_csv(f"stats/corr_matrix_{tag}.csv", index=True)
+    plot_correlation_matrix(corr_df, f"stats/corr_matrix_{tag}.png")
 
-    print("===== ROW COUNT =====")
-    row_count = df.count()
-    print(row_count)
-
-    print("===== COLUMN COUNT =====")
-    col_count = len(df.columns)
-    print(col_count)
-
-    print("===== SAMPLE =====")
-    df.show(5, truncate=False)
-
-    print("===== DATA TYPES DISTRIBUTION =====")
-    types = [field.dataType.simpleString() for field in df.schema.fields]
-    type_counts = Counter(types)
-    for dtype, count in type_counts.items():
-        print(f"{dtype}: {count}")
-
-    print("===== NUMERIC VS NON-NUMERIC =====")
-    numeric_cols = [f.name for f in df.schema.fields if isinstance(f.dataType, NumericType)]
-    print(f"Numeric columns: {len(numeric_cols)}")
-    print(f"Non-numeric columns: {col_count - len(numeric_cols)}")
-
-    print("===== FILE SIZE ON DISK =====")
-    if source_path is None:
-        print("Source path not provided.")
-    else:
-        if os.path.isfile(source_path):
-            size_bytes = os.path.getsize(source_path)
-            print(f"Source file size: {_human_gb(size_bytes)} GB")
-        elif os.path.isdir(source_path):
-            size_bytes = _dir_size_bytes(source_path)
-            print(f"Source directory size: {_human_gb(size_bytes)} GB")
+    pairs = find_high_correlations(corr_df, threshold=threshold)
+    with open(f"stats/high_correlations_{tag}.txt", "w", encoding="utf-8") as f:
+        f.write(f"High correlations (|r| > {threshold})\n")
+        if pairs:
+            for a, b, r in pairs:
+                f.write(f"{a} <-> {b}: {r}\n")
         else:
-            print("Source path not found.")
-
-    print("===== TOTAL NULL VALUES =====")
-    total_nulls = df.select([
-        F.count(F.when(F.col(c).isNull(), c)).alias(c)
-        for c in df.columns
-    ])
-    total_nulls.show(truncate=False)
+            f.write("No high-correlation pairs found.\n")
 
 
-def numeric_statistics(df):
-    numeric_cols = [f.name for f in df.schema.fields if isinstance(f.dataType, NumericType)]
-    print("NUMERIC COLUMNS:", numeric_cols)
-    if numeric_cols:
-        df.select(numeric_cols).describe().show()
+def build_spark():
+    py = r"C:\Users\Eclipse\AppData\Local\Programs\Python\Python311\python.exe"
+    os.environ.setdefault("PYSPARK_PYTHON", py)
+    os.environ.setdefault("PYSPARK_DRIVER_PYTHON", py)
+    os.environ.setdefault("SPARK_LOCAL_HOSTNAME", "localhost")
 
-
-def drop_columns(df):
-    columns_to_drop = [
-        "ID",
-        "Case Number",
-        "X Coordinate",
-        "Y Coordinate",
-        "Location",
-        "Year",
-    ]
-    return df.drop(*columns_to_drop)
-
-
-def feature_informativeness_analysis(df):
-    print("===== FEATURE INFORMATIVENESS ANALYSIS =====")
-
-    total_rows = df.count()
-
-    for field in df.schema.fields:
-        col_name = field.name
-        dtype = field.dataType
-
-        print(f"\n--- Column: {col_name} ({dtype.simpleString()}) ---")
-
-        if isinstance(dtype, StringType):
-
-            distinct_count = df.select(col_name).distinct().count()
-
-            top_freq = (
-                df.groupBy(col_name)
-                  .count()
-                  .orderBy(F.desc("count"))
-                  .limit(1)
-            ).collect()
-
-            if top_freq:
-                top_value = top_freq[0][0]
-                top_count = top_freq[0][1]
-                ratio = round(top_count / total_rows, 4)
-
-                print(f"Distinct values: {distinct_count}")
-                print(f"Most frequent value: {top_value}")
-                print(f"Dominance ratio: {ratio}")
-            else:
-                print("No data.")
-
-        elif isinstance(dtype, (IntegerType, DoubleType)):
-
-            stats = df.select(
-                F.variance(col_name).alias("variance"),
-                F.stddev(col_name).alias("stddev")
-            ).collect()[0]
-
-            print(f"Variance: {stats['variance']}")
-            print(f"Stddev: {stats['stddev']}")
-
-        elif isinstance(dtype, (BooleanType, TimestampType)):
-            print("Skipped (boolean/timestamp).")
-
-        else:
-            print("Skipped (other type).")
-
-
-def missing_and_duplicates_analysis(df):
-    missing_summary = df.select([
-        F.count(F.when(F.col(c).isNull(), c)).alias(c)
-        for c in df.columns
-    ])
-    print("Пропущені значення по колонках:")
-    missing_summary.show(truncate=False)
-
-    total_rows = df.count()
-    missing_percent = df.select([
-        (F.count(F.when(F.col(c).isNull(), c)) / total_rows * 100).alias(c)
-        for c in df.columns
-    ])
-    print("Відсоток пропусків по колонках:")
-    missing_percent.show(truncate=False)
-
-    duplicate_count = df.count() - df.dropDuplicates().count()
-    print(f"Кількість дублікатів: {duplicate_count}")
-
-    return df
-
-
-def handle_missing(df):
-    df = df.fillna({
-        "Primary Type": "Unknown",
-        "Description": "Unknown",
-        "Location Description": "Unknown"
-    })
-
-    df = df.filter(
-        (F.col("Date").isNotNull()) &
-        (F.col("Latitude").isNotNull()) &
-        (F.col("Longitude").isNotNull())
+    spark = (
+        SparkSession.builder
+        .master("local[*]")
+        .appName("ChicagoCrimes")
+        .config("spark.driver.host", "127.0.0.1")
+        .config("spark.driver.bindAddress", "127.0.0.1")
+        .getOrCreate()
     )
-
-    df = df.withColumn(
-        "Ward",
-        F.when(F.col("Ward").isNull() | (F.col("Ward") == 0), F.lit(-1)).otherwise(F.col("Ward"))
-    )
-
-    df = df.withColumn(
-        "Community Area",
-        F.when(F.col("Community Area").isNull() | (F.col("Community Area") == 0), F.lit(-1)).otherwise(F.col("Community Area"))
-    )
-
-    df = df.filter(F.col("District").isNotNull() & (F.col("District") != "0"))
-
-    return df
-
-
-def write_single_csv(df, path, filename):
-    temp_dir = path + "_tmp"
-    os.makedirs(temp_dir, exist_ok=True)
-
-    df.coalesce(1).write.csv(temp_dir, header=True, mode="overwrite")
-
-    tmp_csv = glob.glob(os.path.join(temp_dir, "*.csv"))[0]
-
-    shutil.move(tmp_csv, os.path.join(path, filename))
-
-    shutil.rmtree(temp_dir)
-
-
-def run_analysis(df, severity_df, districts_df):
-    output_dir = "output"
-    os.makedirs(output_dir, exist_ok=True)
-
-    queries = [
-        ("Q1: Крадіжки на суму (>$500)", lambda: q1_high_value_thefts(df)),
-        ("Q2: Побудове насильство без проведеного арешту", lambda: q2_domestic_violence_no_arrest(df)),
-        ("Q3: Злочини, що відбувалися в ресторанах", lambda: q3_crimes_in_restaurants(df)),
-        ("Q4: Злочини за 2026 рік", lambda: q4_crimes_by_year_2026(df)),
-        ("Q5: Вуличні злочини в нічний час", lambda: q5_crimes_on_streets_at_night(df)),
-        ("Q6: Випадки, пов'язані з наркотиками", lambda: q6_narcotics_cases(df)),
-        ("Q7: Злочини з наявними геокординатами для мапування", lambda: q7_crimes_with_valid_coordinates(df)),
-        ("Q8: Злочини у 42-му варді", lambda: q8_specific_ward_analysis(df)),
-        ("Q9: Загальна кількість за типом злочину", lambda: q9_count_by_crime_type(df)),
-        ("Q10: Відсоток арештів по районах", lambda: q10_arrest_rate_by_district(df)),
-        ("Q11: Розподіл злочинів за місяцями", lambda: q11_crimes_per_month(df)),
-        ("Q12: Топ-5 типів локації за частотою злочинів", lambda: q12_top_location_types(df)),
-        ("Q13: Кількість побутових злочинів за роками", lambda: q13_domestic_crimes_per_year(df)),
-        ("Q14: Статистика за кодами FBI", lambda: q14_fbi_code_distribution(df)),
-        ("Q15: Пікові години злочинності", lambda: q15_hourly_crime_frequency(df)),
-        ("Q16: Кількість унікальних справ для пар District/Ward", lambda: q16_district_ward_combinations(df)),
-        ("Q17: Злочини з доданим рівнем критичності", lambda: q17_crimes_with_severity(df, severity_df)),
-        ("Q18: Звіт з назвами районів замість номерів", lambda: q18_named_districts_report(df, districts_df)),
-        ("Q19: Критичні злочини в центральному районі",
-         lambda: q19_critical_crimes_in_central(df, severity_df, districts_df)),
-        ("Q20: Типи злочинів, які відсутні в довіднику пріоритетів",
-         lambda: q20_unmatched_crime_types(df, severity_df)),
-        ("Q21: Порядковий номер злочину в межах району за часом", lambda: q21_rank_crimes_by_date_in_district(df)),
-        ("Q22: Накопичувальний підсумок злочинів для кожного варду", lambda: q22_cumulative_crime_count_by_ward(df)),
-        ("Q23: Різниця в часі (в секундах) між поточним та попереднім злочином в районі",
-         lambda: q23_time_diff_between_crimes(df)),
-        ("Q24: Найпопулярніший тип злочину для кожного району", lambda: q24_top_crime_type_per_district(df)),
-    ]
-
-    for i, (title, query_func) in enumerate(queries, start=1):
-        print(f"\n{'=' * 80}")
-        print(f"Бізнес-питання: {title}")
-        print(f"{'=' * 80}")
-
-        result_df = query_func()
-        result_df.explain()
-
-        filename = f"Q{i}.csv"
-        write_single_csv(result_df, "output", filename)
-
-
-if __name__ == "__main__":
-    spark = SparkSession.builder.appName("ChicagoCrimes").getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
+    return spark
+
+
+def main():
+    spark = build_spark()
 
     path = "data/chicago_crimes.csv"
     df = load_crime_data(spark, path)
 
-    validate_dataframe(df)
+    start_stats(df, source_path=path, tag="raw")
 
-    severity_df, districts_df = get_lookup_tables(spark)
-    run_analysis(df, severity_df, districts_df)
+    df_clean = drop_columns(df)
+    df_clean = handle_missing(df_clean)
+    df_clean = remove_structural_anomalies(df_clean)
+
+    validate_dataframe(df_clean)
+
+    start_stats(df_clean, source_path=path, tag="clean")
+    start_corr(df_clean, threshold=0.9, tag="clean")
+
+
+if __name__ == "__main__":
+    main()
