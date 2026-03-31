@@ -13,6 +13,8 @@ from data_stats import (
     plot_correlation_matrix,
     find_high_correlations,
 )
+from pipeline import run_analysis
+from queries import get_lookup_tables
 
 
 def start_stats(df, source_path: str, tag: str):
@@ -51,7 +53,8 @@ def start_corr(df, threshold=0.9, tag="clean"):
 
 
 def build_spark():
-    py = r"C:\Users\Eclipse\AppData\Local\Programs\Python\Python311\python.exe"
+    py = sys.executable
+
     os.environ.setdefault("PYSPARK_PYTHON", py)
     os.environ.setdefault("PYSPARK_DRIVER_PYTHON", py)
     os.environ.setdefault("SPARK_LOCAL_HOSTNAME", "localhost")
@@ -64,6 +67,7 @@ def build_spark():
         .config("spark.driver.bindAddress", "127.0.0.1")
         .getOrCreate()
     )
+
     spark.sparkContext.setLogLevel("ERROR")
     return spark
 
@@ -84,6 +88,10 @@ def main():
 
     start_stats(df_clean, source_path=path, tag="clean")
     start_corr(df_clean, threshold=0.9, tag="clean")
+
+    severity_df, districts_df = get_lookup_tables(spark)
+
+    run_analysis(df_clean, severity_df, districts_df)
 
 
 if __name__ == "__main__":

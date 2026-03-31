@@ -5,10 +5,23 @@ import shutil
 import queries as q
 
 
+# def write_single_csv(df, out_dir: str, filename: str):
+#     os.makedirs(out_dir, exist_ok=True)
+#     pdf = df.toPandas()
+#     pdf.to_csv(os.path.join(out_dir, filename), index=False)
+
+
 def write_single_csv(df, out_dir: str, filename: str):
-    os.makedirs(out_dir, exist_ok=True)
-    pdf = df.toPandas()
-    pdf.to_csv(os.path.join(out_dir, filename), index=False)
+    temp_dir = out_dir + "_tmp"
+    os.makedirs(temp_dir, exist_ok=True)
+
+    df.coalesce(1).write.csv(temp_dir, header=True, mode="overwrite")
+
+    tmp_csv = glob.glob(os.path.join(temp_dir, "*.csv"))[0]
+
+    shutil.move(tmp_csv, os.path.join(out_dir, filename))
+
+    shutil.rmtree(temp_dir)
 
 
 def run_analysis(df, severity_df, districts_df, out_dir: str = "output"):
