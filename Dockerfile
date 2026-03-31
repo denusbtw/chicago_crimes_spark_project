@@ -12,7 +12,14 @@ RUN ln -s $(ls -d /usr/lib/jvm/java-17-openjdk-*) /usr/lib/jvm/java-default
 ENV JAVA_HOME=/usr/lib/jvm/java-default
 ENV PATH=$PATH:$JAVA_HOME/bin
 
-RUN pip install --no-cache-dir pyspark
+RUN pip install \
+    pyspark \
+    numpy \
+    pandas \
+    matplotlib \
+    seaborn \
+    scikit-learn \
+    prince
 
 COPY . .
 

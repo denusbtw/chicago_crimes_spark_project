@@ -91,7 +91,7 @@ Stddev: 3813096.584679
 
 --- Column: Case Number (string) ---
 Distinct values: 8494792
-Most frequent value: HJ590004
+Most frequent value: HZ140230
 Dominance ratio: 0.0
 
 --- Column: Date (timestamp) ---

@@ -223,3 +223,7 @@ __marimo__/
 data/
 output/
 output_tmp/
+famd_results/
+pca_results/
+imbalance_results/
+stats/
