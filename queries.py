@@ -56,7 +56,7 @@ def q7_crimes_with_valid_coordinates(df: DataFrame):
 
 def q8_specific_ward_analysis(df: DataFrame):
     """Злочини у 42-му варді."""
-    res = df.filter(F.col("Ward") == "42")
+    res = df.filter(F.col("Ward") == 42)
     return res
 
 def q9_count_by_crime_type(df: DataFrame):
