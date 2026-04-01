@@ -50,3 +50,6 @@ def run_analysis(df, severity_df, districts_df, out_dir: str = "output"):
         result_df.explain()
 
         write_single_csv(result_df, out_dir, f"Q{i}.csv")
+
+if __name__ == "__main__":
+    run_analysis()

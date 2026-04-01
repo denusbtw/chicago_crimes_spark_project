@@ -82,6 +82,108 @@ def extract_block_features(df):
         ).otherwise(F.col("street_name"))
     )
 
+    exact_mode = (
+        df.filter(F.col("block_number").isNotNull())
+        .groupBy("street_name", "street_type", "direction", "District", "block_number")
+        .count()
+    )
+
+    exact_window = Window.partitionBy(
+        "street_name", "street_type", "direction", "District"
+    ).orderBy(F.desc("count"), F.asc("block_number"))
+
+    exact_mode = (
+        exact_mode
+        .withColumn("rn", F.row_number().over(exact_window))
+        .filter(F.col("rn") == 1)
+        .select(
+            "street_name",
+            "street_type",
+            "direction",
+            "District",
+            F.col("block_number").alias("block_number_exact_imputed")
+        )
+    )
+
+    street_mode = (
+        df.filter(F.col("block_number").isNotNull())
+        .groupBy("street_name", "street_type", "direction", "block_number")
+        .count()
+    )
+
+    street_window = Window.partitionBy(
+        "street_name", "street_type", "direction"
+    ).orderBy(F.desc("count"), F.asc("block_number"))
+
+    street_mode = (
+        street_mode
+        .withColumn("rn", F.row_number().over(street_window))
+        .filter(F.col("rn") == 1)
+        .select(
+            "street_name",
+            "street_type",
+            "direction",
+            F.col("block_number").alias("block_number_street_imputed")
+        )
+    )
+
+    type_mode = (
+        df.filter(F.col("block_number").isNotNull())
+        .groupBy("street_name", "street_type", "block_number")
+        .count()
+    )
+
+    type_window = Window.partitionBy(
+        "street_name", "street_type"
+    ).orderBy(F.desc("count"), F.asc("block_number"))
+
+    type_mode = (
+        type_mode
+        .withColumn("rn", F.row_number().over(type_window))
+        .filter(F.col("rn") == 1)
+        .select(
+            "street_name",
+            "street_type",
+            F.col("block_number").alias("block_number_type_imputed")
+        )
+    )
+
+    df = df.join(
+        exact_mode,
+        on=["street_name", "street_type", "direction", "District"],
+        how="left"
+    )
+
+    df = df.join(
+        street_mode,
+        on=["street_name", "street_type", "direction"],
+        how="left"
+    )
+
+    df = df.join(
+        type_mode,
+        on=["street_name", "street_type"],
+        how="left"
+    )
+
+    df = df.withColumn(
+        "block_number",
+        F.when(
+            F.col("block_number").isNull(),
+            F.coalesce(
+                F.col("block_number_exact_imputed"),
+                F.col("block_number_street_imputed"),
+                F.col("block_number_type_imputed")
+            )
+        ).otherwise(F.col("block_number"))
+    )
+
+    df = df.drop(
+        "block_number_exact_imputed",
+        "block_number_street_imputed",
+        "block_number_type_imputed"
+    )
+
     return df
 
 
