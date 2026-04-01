@@ -23,7 +23,7 @@ def save_clean_dataset(df, out_path="data/processed/chicago_crimes_clean"):
 def run_preprocessing():
     spark = build_spark("ChicagoCrimes-Preprocessing")
 
-    path = "data/chicago_crimes.csv"
+    path = "data/chicago_crime.csv"
     df = load_crime_data(spark, path)
 
     df_clean = drop_columns(df)

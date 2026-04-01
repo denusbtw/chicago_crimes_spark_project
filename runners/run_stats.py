@@ -40,7 +40,7 @@ def start_stats(df, source_path: str, tag: str):
 def run_stats():
     spark = build_spark("ChicagoCrimes-Stats")
 
-    raw_path = "data/chicago_crimes.csv"
+    raw_path = "data/chicago_crime.csv"
     clean_path = "data/processed/chicago_crimes_clean"
 
     df_raw = load_crime_data(spark, raw_path)

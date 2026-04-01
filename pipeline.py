@@ -1,30 +1,27 @@
-import glob
 import os
-import shutil
-
 import queries as q
 
 
-# def write_single_csv(df, out_dir: str, filename: str):
-#     os.makedirs(out_dir, exist_ok=True)
-#     pdf = df.toPandas()
-#     pdf.to_csv(os.path.join(out_dir, filename), index=False)
-
-
 def write_single_csv(df, out_dir: str, filename: str):
-    temp_dir = out_dir + "_tmp"
-    os.makedirs(temp_dir, exist_ok=True)
+    temp_path = os.path.join(out_dir, "tmp_" + filename)
+    final_path = os.path.join(out_dir, filename)
 
-    df.coalesce(1).write.csv(temp_dir, header=True, mode="overwrite")
+    df.coalesce(1).write \
+        .mode("overwrite") \
+        .option("header", True) \
+        .csv(temp_path)
 
-    tmp_csv = glob.glob(os.path.join(temp_dir, "*.csv"))[0]
+    import glob
+    import shutil
 
-    shutil.move(tmp_csv, os.path.join(out_dir, filename))
+    part_file = glob.glob(temp_path + "/part-*.csv")[0]
+    shutil.move(part_file, final_path)
+    shutil.rmtree(temp_path)
 
-    shutil.rmtree(temp_dir)
 
+def run_analysis(df, spark, out_dir: str = "output"):
+    severity_df, districts_df = q.get_lookup_tables(spark)
 
-def run_analysis(df, severity_df, districts_df, out_dir: str = "output"):
     queries_list = [
         ("Q1: Крадіжки на суму (>$500)", lambda: q.q1_high_value_thefts(df)),
         ("Q2: Побудове насильство без проведеного арешту", lambda: q.q2_domestic_violence_no_arrest(df)),
