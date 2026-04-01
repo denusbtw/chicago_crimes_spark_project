@@ -16,7 +16,6 @@ def run_imbalance():
         exclude_cols=[
             "ID",
             "Case Number",
-            "Block",
             "Location",
             "X Coordinate",
             "Y Coordinate",

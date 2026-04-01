@@ -38,16 +38,27 @@ def start_stats(df, source_path: str, tag: str):
 
 
 def run_stats():
+    if len(sys.argv) < 2:
+        print("Usage: python -m runners.run_stats [raw|clean]")
+        return
+
+    mode = sys.argv[1].strip().lower()
+
     spark = build_spark("ChicagoCrimes-Stats")
 
     raw_path = "data/chicago_crime.csv"
     clean_path = "data/processed/chicago_crimes_clean"
 
-    df_raw = load_crime_data(spark, raw_path)
-    start_stats(df_raw, source_path=raw_path, tag="raw")
+    if mode == "raw":
+        df_raw = load_crime_data(spark, raw_path)
+        start_stats(df_raw, source_path=raw_path, tag="raw")
 
-    df_clean = spark.read.parquet(clean_path)
-    start_stats(df_clean, source_path=clean_path, tag="clean")
+    elif mode == "clean":
+        df_clean = spark.read.parquet(clean_path)
+        start_stats(df_clean, source_path=clean_path, tag="clean")
+
+    else:
+        print("Invalid argument. Use: raw or clean")
 
 
 if __name__ == "__main__":

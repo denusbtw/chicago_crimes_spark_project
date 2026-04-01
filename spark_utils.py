@@ -12,11 +12,10 @@ def build_spark(app_name="ChicagoCrimes"):
         .config("spark.driver.host", "127.0.0.1")
         .config("spark.driver.bindAddress", "127.0.0.1")
 
-        .config("spark.driver.memory", "4g")
-        .config("spark.executor.memory", "4g")
+        .config("spark.driver.memory", "2g")
+        .config("spark.executor.memory", "2g")
 
-        .config("spark.driver.maxResultSize", "2g")
-        .config("spark.sql.shuffle.partitions", "24")
+        .config("spark.sql.shuffle.partitions", "50")
         .config("spark.default.parallelism", "4")
 
         .config("spark.local.dir", "/tmp/spark-temp")
