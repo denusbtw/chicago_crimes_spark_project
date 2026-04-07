@@ -17,14 +17,10 @@ def run_pipeline():
 
     df = (
         spark.read
-        .option("header", True)
-        .option("inferSchema", True)
-        .option("sep", ";")
-        .csv(str(DATA_DIR / "chicago_crime.csv"))
+        .parquet(str(DATA_DIR / "processed" / "chicago_crimes_clean"))
     )
 
     run_analysis(df, spark, out_dir=str(OUTPUT_DIR))
-
     spark.stop()
 
 

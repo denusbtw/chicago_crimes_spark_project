@@ -1,65 +1,119 @@
 import os
 import queries as q
+import matplotlib.pyplot as plt
+import numpy as np
+from pyspark.sql import functions as F
+import glob
+import shutil
 
 
-def write_single_csv(df, out_dir: str, filename: str):
-    temp_path = os.path.join(out_dir, "tmp_" + filename)
-    final_path = os.path.join(out_dir, filename)
+def save_output(df, base_dir, q_folder, title, chart_type="bar"):
+    target_path = os.path.join(base_dir, q_folder)
+    os.makedirs(target_path, exist_ok=True)
 
-    df.coalesce(1).write \
-        .mode("overwrite") \
-        .option("header", True) \
-        .csv(temp_path)
-
-    import glob
-    import shutil
-
-    part_file = glob.glob(temp_path + "/part-*.csv")[0]
-    shutil.move(part_file, final_path)
+    # Збереження CSV (залишаємо як було)
+    temp_path = os.path.join(target_path, "temp_spark")
+    df.coalesce(1).write.mode("overwrite").option("header", True).csv(temp_path)
+    part_file = glob.glob(os.path.join(temp_path, "part-*.csv"))[0]
+    shutil.move(part_file, os.path.join(target_path, "result.csv"))
     shutil.rmtree(temp_path)
+
+    # Візуалізація
+    pdf = df.toPandas()
+    if not pdf.empty:
+        plt.figure(figsize=(12, 7))
+        x_label = pdf.columns[0]
+        y_label = pdf.columns[1]
+
+        if chart_type == "bar":
+            plt.bar(pdf[x_label].astype(str), pdf[y_label], color='skyblue', edgecolor='navy')
+
+        elif chart_type == "barh":  # Горизонтальний (ідеально для довгих назв вулиць)
+            plt.barh(pdf[x_label].astype(str), pdf[y_label], color='salmon')
+            plt.gca().invert_yaxis()  # Щоб топ був зверху
+
+        elif chart_type == "line":  # Для часових рядів
+            plt.plot(pdf[x_label], pdf[y_label], marker='o', linestyle='-', color='green', linewidth=2)
+            plt.grid(True, linestyle='--', alpha=0.6)
+
+        elif chart_type == "pie":  # Для часток (Arrest, Domestic, Severity)
+            plt.pie(pdf[y_label], labels=pdf[x_label].astype(str), autopct='%1.1f%%', startangle=140,
+                    colors=plt.cm.Paired.colors)
+
+        elif chart_type == "area":  # Для накопичувальних підсумків
+            plt.fill_between(pdf[x_label], pdf[y_label], color="lightgreen", alpha=0.4)
+            plt.plot(pdf[x_label], pdf[y_label], color="green", alpha=0.6)
+
+        elif chart_type == "scatter":  # Для кореляцій (наприклад, Населення vs Злочини)
+            plt.scatter(pdf[x_label], pdf[y_label], alpha=0.5, color='purple')
+            for i, txt in enumerate(pdf[x_label]):  # Додамо підписи точок
+                plt.annotate(txt, (pdf.iloc[i, 0], pdf.iloc[i, 1]), size=8)
+
+        elif chart_type == "polar":
+            # Перетворюємо години в радіани (2*pi радіан = 24 години)
+            angles = [n / 24.0 * 2 * np.pi for n in pdf[x_label].astype(float)]
+            # Щоб графік замкнувся, додаємо першу точку в кінець
+            angles += angles[:1]
+            values = pdf[y_label].tolist()
+            values += values[:1]
+
+            ax = plt.subplot(111, projection='polar')
+            # Малюємо лінію або бари
+            ax.plot(angles, values, color='green', linewidth=2)
+            ax.fill(angles, values, color='green', alpha=0.25)
+
+            # Налаштовуємо «циферблат»
+            ax.set_theta_offset(np.pi / 2)  # Початок зверху (12:00)
+            ax.set_theta_direction(-1)  # За годинниковою стрілкою
+
+            # Назви годин на колі
+            ax.set_xticks(np.linspace(0, 2 * np.pi, 24, endpoint=False))
+            ax.set_xticklabels([f"{h}h" for h in range(24)])
+
+        plt.title(title)
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
+        if chart_type != "pie":
+            plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+
+        plt.savefig(os.path.join(target_path, "chart.png"))
+        plt.close()
+
+
+def prepare_df(df):
+    return df.withColumn(
+        "ts", F.to_timestamp("Date", "MM/dd/yyyy hh:mm:ss a")
+    ).withColumn(
+        "hour", F.hour("ts")
+    ).withColumn(
+        "year", F.year("ts")
+    ).withColumn(
+        "month", F.month("ts")
+    ).withColumn(
+        "day_of_week", F.date_format("ts", "E")
+    )
 
 
 def run_analysis(df, spark, out_dir: str = "output"):
-    severity_df, districts_df = q.get_lookup_tables(spark)
+    df = prepare_df(df)
 
-    queries_list = [
-        ("Q1: Крадіжки на суму (>$500)", lambda: q.q1_high_value_thefts(df)),
-        ("Q2: Побудове насильство без проведеного арешту", lambda: q.q2_domestic_violence_no_arrest(df)),
-        ("Q3: Злочини, що відбувалися в ресторанах", lambda: q.q3_crimes_in_restaurants(df)),
-        ("Q4: Злочини за 2026 рік", lambda: q.q4_crimes_by_year_2026(df)),
-        ("Q5: Вуличні злочини в нічний час", lambda: q.q5_crimes_on_streets_at_night(df)),
-        ("Q6: Випадки, пов'язані з наркотиками", lambda: q.q6_narcotics_cases(df)),
-        ("Q7: Злочини з наявними геокординатами для мапування", lambda: q.q7_crimes_with_valid_coordinates(df)),
-        ("Q8: Злочини у 42-му варді", lambda: q.q8_specific_ward_analysis(df)),
-        ("Q9: Загальна кількість за типом злочину", lambda: q.q9_count_by_crime_type(df)),
-        ("Q10: Відсоток арештів по районах", lambda: q.q10_arrest_rate_by_district(df)),
-        ("Q11: Розподіл злочинів за місяцями", lambda: q.q11_crimes_per_month(df)),
-        ("Q12: Топ-5 типів локації за частотою злочинів", lambda: q.q12_top_location_types(df)),
-        ("Q13: Кількість побутових злочинів за роками", lambda: q.q13_domestic_crimes_per_year(df)),
-        ("Q14: Статистика за кодами FBI", lambda: q.q14_fbi_code_distribution(df)),
-        ("Q15: Пікові години злочинності", lambda: q.q15_hourly_crime_frequency(df)),
-        ("Q16: Кількість унікальних справ для пар District/Ward", lambda: q.q16_district_ward_combinations(df)),
-        ("Q17: Злочини з доданим рівнем критичності", lambda: q.q17_crimes_with_severity(df, severity_df)),
-        ("Q18: Звіт з назвами районів замість номерів", lambda: q.q18_named_districts_report(df, districts_df)),
-        ("Q19: Критичні злочини в центральному районі", lambda: q.q19_critical_crimes_in_central(df, severity_df, districts_df)),
-        ("Q20: Типи злочинів, які відсутні в довіднику пріоритетів", lambda: q.q20_unmatched_crime_types(df, severity_df)),
-        ("Q21: Порядковий номер злочину в межах району за часом", lambda: q.q21_rank_crimes_by_date_in_district(df)),
-        ("Q22: Накопичувальний підсумок злочинів для кожного варду", lambda: q.q22_cumulative_crime_count_by_ward(df)),
-        ("Q23: Різниця в часі (в секундах) між поточним та попереднім злочином в районі", lambda: q.q23_time_diff_between_crimes(df)),
-        ("Q24: Найпопулярніший тип злочину для кожного району", lambda: q.q24_top_crime_type_per_district(df)),
+    tasks = [
+        (q.q1_night_crimes, [df], "Q01_Night_Crimes", "Нічні злочини за типами", "barh"),
+        (q.q2_top_theft_districts, [df], "Q02_Theft_Districts", "ТОП районів за крадіжками", "bar"),
+        (q.q3_domestic_monthly, [df], "Q03_Domestic_Monthly", "Домашнє насильство по місяцях", "line"),
+        (q.q4_arrest_by_type, [df], "Q04_Arrests_By_Type", "Арешти за типами злочинів", "barh"),
+        (q.q5_weekend_vs_weekday, [df], "Q05_Weekend_vs_Weekday", "Вихідні vs будні", "pie"),
+        (q.q6_criminal_damage_locations, [df], "Q06_Criminal_Damage", "ТОП 10 CRIMINAL DAMAGE по локаціях", "barh"),
+        (q.q7_hourly_all_city, [df], "Q07_Hourly_All_City", "Активність по годинах", "polar"),
+        (q.q8_street_crimes, [df], "Q08_Street_Crimes", "Злочини на вулиці", "barh"),
+        (q.q9_domestic_by_district, [df], "Q09_Domestic_District", "Домашнє насильство по районах", "bar"),
+        (q.q10_day_crimes, [df], "Q10_Day_Crimes", "Денні злочини", "barh"),
+        (q.q11_arrest_share_2025, [df], "Q11_Arrest_Share", "Арешти 2025 по типах", "barh"),
+        (q.q12_top_streets, [df], "Q12_Top_Streets", "ТОП вулиць за злочинами", "barh"),
     ]
 
-    os.makedirs(out_dir, exist_ok=True)
-
-    for i, (title, query_func) in enumerate(queries_list, start=1):
-        print(f"\n{'=' * 80}")
-        print(f"Бізнес-питання: {title}")
-        print(f"{'=' * 80}")
-
-        result_df = query_func()
-        result_df.explain()
-
-        write_single_csv(result_df, out_dir, f"Q{i}.csv")
-
-if __name__ == "__main__":
-    run_analysis()
+    for func, args, folder, title, c_type in tasks:
+        print(f"--- Processing: {title} ---")
+        result_df = func(*args)
+        save_output(result_df, out_dir, folder, title, chart_type=c_type)
