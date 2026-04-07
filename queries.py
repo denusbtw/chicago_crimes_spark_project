@@ -25,7 +25,7 @@ def q1_high_value_thefts(df: DataFrame):
     return res
 
 def q2_domestic_violence_no_arrest(df: DataFrame):
-    """Скільки інцидентів домашнього насильства відбулося без здійснення арешту?"""
+    """Побутове насильство без проведеного арешту."""
     res = df.filter((F.col("Domestic") == True) & (F.col("Arrest") == False))
     return res
 
@@ -35,7 +35,7 @@ def q3_crimes_in_restaurants(df: DataFrame):
     return res
 
 def q4_crimes_by_year_2026(df: DataFrame):
-    """Скільки злочинів зафіксовано у 2026 році?"""
+    """Злочини за конкретний рік."""
     res = df.filter(F.year("Date") == 2026)
     return res
 
@@ -45,7 +45,7 @@ def q5_crimes_on_streets_at_night(df: DataFrame):
     return res
 
 def q6_narcotics_cases(df: DataFrame):
-    """Скільки зафіксовано інцидентів, пов’язаних із незаконним обігом наркотиків?"""
+    """Випадки, пов'язані з наркотиками (Primary Type)."""
     res = df.filter(F.col("Primary Type") == "NARCOTICS")
     return res
 
@@ -55,8 +55,8 @@ def q7_crimes_with_valid_coordinates(df: DataFrame):
     return res
 
 def q8_specific_ward_analysis(df: DataFrame):
-    """Скільки злочинів було скоєно у 42-му виборчому окрузі (Ward)?"""
-    res = df.filter(F.col("Ward") == "42")
+    """Злочини у 42-му варді."""
+    res = df.filter(F.col("Ward") == 42)
     return res
 
 def q9_count_by_crime_type(df: DataFrame):
