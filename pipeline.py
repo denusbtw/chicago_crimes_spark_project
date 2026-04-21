@@ -25,7 +25,13 @@ def run_analysis(df, spark, out_dir: str = "output"):
         (q.Q3_D_Narcotics_vs_Assault_By_District(out_dir), "Q3_D_Narcotics_vs_Assault_By_District", "Співвідношення Narcotics vs Assault по Районах"),
         (q.Q4_D_Domestic_By_District(out_dir), "Q4_D_Domestic_By_District", "Домашнє насильство по районах"),
         (q.Q5_D_Arrest_Ratio_By_Ward(out_dir), "Q5_D_Arrest_Ratio_By_Ward", "Топ-15 Ward за відсотком арештів"),
-        (q.Q6_D_Moving_Average_Crimes(out_dir), "Q6_D_Moving_Average_Crimes", "Динаміка злочинності (3-міс. ковзне середнє)"),
+        (q.Q6_D_Moving_Average_Crimes(out_dir), "Q6_D_Moving_Average_Crimes", "Динаміка злочинності (3-міс. ковзне середнє)"), 
+        (q.Q1_J_Top_Theft_Districts(out_dir), "Q1_J_Top_Theft_Districts", "ТОП-10 районів за крадіжками"),
+        (q.Q2_J_Domestic_Monthly(out_dir), "Q2_J_Domestic_Monthly", "Домашнє насильство по місяцях"),
+        (q.Q3_J_Top5_Crime_Locations(out_dir), "Q3_J_Top5_Crime_Locations", "Локації ТОП-5 найпопулярніших типів злочинів"),
+        (q.Q4_J_Top_Streets(out_dir), "Q4_J_Top_Streets", "ТОП-10 вулиць за кількістю злочинів"),
+        (q.Q5_J_Top_Crime_Per_District(out_dir), "Q5_J_Top_Crime_Per_District", "Найпопулярніший тип злочину по районах"),
+        (q.Q6_J_Most_Dangerous_Blocks_Share(out_dir), "Q6_J_Most_Dangerous_Blocks_Share", "Топ-10 найнебезпечніших кварталів (частка)"),
     ]
     
     for question_obj, folder, title in tasks:
