@@ -76,7 +76,7 @@ class Q1_D_Night_Crimes(BaseQuestion):
         plt.close()
 
 
-class Q2_D_Weekend_vs_Weekday(BaseQuestion): #Денис
+class Q2_D_Weekend_vs_Weekday(BaseQuestion):
     """groupby"""
     def execute(self, df, spark=None):
         return df.withColumn(
@@ -105,7 +105,7 @@ class Q2_D_Weekend_vs_Weekday(BaseQuestion): #Денис
         plt.savefig(path)
         plt.close()
 
-class Q3_D_Narcotics_vs_Assault_By_District(BaseQuestion): #Денис
+class Q3_D_Narcotics_vs_Assault_By_District(BaseQuestion): 
     """filter, group by, join"""
     def execute(self, df):
         df_narc = df.filter(F.col("Primary Type") == "NARCOTICS") \
@@ -132,7 +132,7 @@ class Q3_D_Narcotics_vs_Assault_By_District(BaseQuestion): #Денис
         plt.close()
 
 
-class Q4_D_Domestic_By_District(BaseQuestion): #Денис
+class Q4_D_Domestic_By_District(BaseQuestion):
     """filter, group by"""
     def execute(self, df, spark=None):
         return df.filter(F.col("Domestic") == "true") \
@@ -187,7 +187,7 @@ class Q5_D_Arrest_Ratio_By_Ward(BaseQuestion):
         plt.close()
 
 
-class Q6_D_Moving_Average_Crimes(BaseQuestion): #Денис
+class Q6_D_Moving_Average_Crimes(BaseQuestion):
     """filter, group by, window"""
     def execute(self, df):
         df_month = df.withColumn("YearMonth", F.date_format(F.col("Date"), "yyyy-MM")) \
@@ -214,6 +214,183 @@ class Q6_D_Moving_Average_Crimes(BaseQuestion): #Денис
 
         plt.legend()
         plt.grid(True, alpha=0.4)
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q1_J_Top_Theft_Districts(BaseQuestion):
+    """filter, group by"""
+    def execute(self, df, spark=None):
+        return df.filter(F.col("Primary Type") == "THEFT") \
+            .groupBy("District").count() \
+            .orderBy(F.desc("count")) \
+            .limit(10)
+
+    def draw_plot(self, pdf, title, path):
+        plt.figure(figsize=(10, 6))
+
+        bars = plt.bar(pdf["District"].astype(str), pdf["count"],
+                       color='skyblue', edgecolor='navy')
+
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width() / 2., height + 500,
+                     f'{int(height):,}', ha='center', va='bottom', fontsize=10)
+
+        plt.title(title, fontsize=14, fontweight='bold')
+        plt.xlabel("Номер району (District)", fontsize=12)
+        plt.ylabel("Кількість крадіжок", fontsize=12)
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q2_J_Domestic_Monthly(BaseQuestion):
+    """filter, group by"""
+    def execute(self, df, spark=None):
+        return df.filter(F.col("Domestic") == "true") \
+            .withColumn("MonthNum", F.month(F.to_timestamp("Date", "MM/dd/yyyy hh:mm:ss a"))) \
+            .groupBy("MonthNum") \
+            .count() \
+            .orderBy("MonthNum")
+
+    def draw_plot(self, pdf, title, path):
+        plt.figure(figsize=(10, 6))
+
+        pdf['MonthName'] = pdf['MonthNum'].apply(lambda x: calendar.month_name[int(x)])
+
+        plt.plot(pdf['MonthName'], pdf['count'], marker='o', linestyle='-',
+                 color='crimson', linewidth=2, markersize=8)
+
+        plt.fill_between(pdf['MonthName'], pdf['count'], color='crimson', alpha=0.1)
+
+        plt.title(title, fontsize=14, fontweight='bold')
+        plt.xlabel("Місяць", fontsize=12)
+        plt.ylabel("Кількість випадків", fontsize=12)
+        plt.grid(True, linestyle='--', alpha=0.5)
+
+        plt.xticks(rotation=45)
+
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+class Q3_J_Top5_Crime_Locations(BaseQuestion):
+    """filter, group by, join"""
+    def execute(self, df):
+        top_types = df.groupBy("Primary Type").count().orderBy(F.desc("count")).limit(5)
+
+        joined = df.join(F.broadcast(top_types.select("Primary Type")), "Primary Type")
+
+        return joined.filter(F.col("Location Description").isNotNull()) \
+            .groupBy("Location Description").count() \
+            .orderBy(F.desc("count")).limit(10)
+
+    def draw_plot(self, pdf, title, path):
+        plt.figure(figsize=(12, 8))
+        plt.barh(pdf["Location Description"], pdf["count"], color='purple')
+        plt.gca().invert_yaxis()
+        plt.title("Топ-10 локацій для 5 найпопулярніших типів злочинів")
+        plt.xlabel("Кількість")
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+class Q4_J_Top_Streets(BaseQuestion):
+    """group by"""
+    def execute(self, df, spark=None):
+        return df.groupBy("street_name").count() \
+                 .orderBy(F.desc("count")) \
+                 .limit(10)
+
+    def draw_plot(self, pdf, title, path):
+        plt.figure(figsize=(12, 7))
+
+        bars = plt.barh(pdf["street_name"], pdf["count"], 
+                        color='indianred', edgecolor='black')
+
+        plt.gca().invert_yaxis()
+
+        for bar in bars:
+            width = bar.get_width()
+            plt.text(width + (width * 0.005), bar.get_y() + bar.get_height()/2, 
+                     f'{int(width):,}', va='center', fontsize=10, fontweight='bold')
+
+        plt.title(title, fontsize=14, fontweight='bold')
+        plt.xlabel("Кількість злочинів", fontsize=12)
+        plt.ylabel("Назва вулиці", fontsize=12)
+        plt.grid(axis='x', linestyle=':', alpha=0.6)
+
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q5_J_Top_Crime_Per_District(BaseQuestion):
+    """filter, group by, window"""
+    def execute(self, df):
+        window_spec = Window.partitionBy("District").orderBy(F.desc("count"))
+
+        grouped = df.filter(F.col("District").isNotNull()) \
+            .groupBy("District", "Primary Type").count()
+
+        return grouped.withColumn("rank", F.rank().over(window_spec)) \
+            .filter(F.col("rank") == 1) \
+            .orderBy("District")
+
+    def draw_plot(self, pdf, title, path):
+        pdf = pdf.head(15)
+        plt.figure(figsize=(12, 6))
+        bars = plt.bar(pdf["District"].astype(str), pdf["count"], color='teal')
+        plt.title("Найпопулярніший тип злочину по районах (Top 15 Districts)")
+        plt.xlabel("District")
+        plt.ylabel("Кількість")
+        for bar, crime in zip(bars, pdf["Primary Type"]):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height(), 
+                     crime, ha='center', va='bottom', rotation=45, fontsize=8)
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+class Q6_J_Most_Dangerous_Blocks_Share(BaseQuestion):
+    """filter, group by, join, window"""
+    def execute(self, df):
+        dist_totals = df.filter(F.col("District").isNotNull()) \
+            .groupBy("District").count().withColumnRenamed("count", "dist_total") \
+            .filter(F.col("dist_total") > 1000) 
+
+        block_counts = df.filter(F.col("Block").isNotNull()).groupBy("District", "Block").count()
+
+        window_spec = Window.partitionBy("District").orderBy(F.desc("count"))
+        top_blocks = block_counts.withColumn("rank", F.row_number().over(window_spec)) \
+            .filter(F.col("rank") == 1)
+
+        return top_blocks.join(dist_totals, "District") \
+            .withColumn("share_percent", (F.col("count") / F.col("dist_total")) * 100) \
+            .orderBy(F.desc("share_percent")).limit(10)
+
+    def draw_plot(self, pdf, title, path):
+        pdf_sorted = pdf.sort_values(by="share_percent", ascending=True)
+
+        plt.figure(figsize=(12, 8))
+        bars = plt.barh(pdf_sorted["Block"], pdf_sorted["share_percent"], color='steelblue', edgecolor='black')
+
+        plt.title("Топ-10 кварталів-монополістів за часткою злочинів у своєму районі", fontsize=14)
+        plt.xlabel("Частка від усіх злочинів району (%)")
+        plt.ylabel("Квартал (Block)")
+
+        plt.xlim(0, max(pdf_sorted["share_percent"]) * 1.4)
+
+        for bar, count, dist_total, dist in zip(bars, pdf_sorted["count"], pdf_sorted["dist_total"], pdf_sorted["District"]):
+            width = bar.get_width()
+            label_text = f'{width:.1f}% ({count:,} з {dist_total:,} у Dist {dist})'
+            plt.text(width + (max(pdf_sorted["share_percent"]) * 0.02), bar.get_y() + bar.get_height()/2, 
+                     label_text, va='center', fontsize=9)
+
+        plt.grid(axis='x', linestyle='--', alpha=0.6)
         plt.tight_layout()
         plt.savefig(path)
         plt.close()
