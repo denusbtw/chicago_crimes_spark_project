@@ -11,7 +11,6 @@ def run_business_plots():
     df = spark.read.parquet(clean_path)
 
     severity_df, districts_df = get_lookup_tables(spark)
-
     registry = [
         {
             "code": "Q1",
