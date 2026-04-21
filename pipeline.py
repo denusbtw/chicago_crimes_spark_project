@@ -38,6 +38,16 @@ def run_analysis(df, spark, out_dir: str = "output"):
         (q.Q4_M_Domestic_Vs_NonDomestic_Streets(out_dir), "Q4_M_Domestic_Vs_NonDomestic_Streets", "Домашні/Недомашні злочини на ТОП-10 вулицях"),
         (q.Q5_M_Crime_Type_Rank_In_Community(out_dir), "Q5_M_Crime_Type_Rank_In_Community", "Топ-10 злочинів у Community Area 40"),
         (q.Q6_M_Hourly_All_City(out_dir), "Q6_M_Hourly_All_City", "Добова активність по всьому місту"),
+        (q.Q1_V_Criminal_Damage_Locations(out_dir), "Q1_V_Criminal_Damage_Locations",
+         "Локації CRIMINAL DAMAGE (Top 10)"),
+        (q.Q2_V_Street_Crimes(out_dir), "Q2_V_Street_Crimes", "Злочини на вулиці за типами"),
+        (q.Q3_V_Day_Crimes(out_dir), "Q3_V_Day_Crimes", "Денні злочини за типами (12-18)"),
+        (q.Q4_V_Cumulative_Arrests_By_Year(out_dir), "Q4_V_Cumulative_Arrests_By_Year",
+         "Накопичувальна кількість арештів по роках"),
+        (q.Q5_V_High_Crime_Beats_Vs_Avg(out_dir), "Q5_V_High_Crime_Beats_Vs_Avg",
+         "Beat з найвищою злочинністю (вище середнього)"),
+        (q.Q6_V_FBI_Code_Arrest_Success(out_dir), "Q6_V_FBI_Code_Arrest_Success",
+         "Топ-12 FBI Codes за рівнем успішних арештів"),
     ]
     
     for question_obj, folder, title in tasks:

@@ -579,3 +579,183 @@ class Q6_M_Hourly_All_City(BaseQuestion):
         plt.tight_layout()
         plt.savefig(path)
         plt.close()
+
+class Q1_V_Criminal_Damage_Locations(BaseQuestion): #Вадим
+    """filter, group by"""
+    def execute(self, df, spark=None):
+        return df.filter(F.col("Primary Type") == "CRIMINAL DAMAGE") \
+            .groupBy("Location Description").count() \
+            .orderBy(F.desc("count")) \
+            .limit(10)
+
+    def draw_plot(self, pdf, title, path):
+        plt.figure(figsize=(12, 7))
+
+        colors = plt.cm.Reds(np.linspace(0.8, 0.4, 10))
+
+        bars = plt.barh(pdf["Location Description"], pdf["count"],
+                        color=colors, edgecolor='maroon')
+
+        plt.gca().invert_yaxis()
+
+        for bar in bars:
+            width = bar.get_width()
+            plt.text(width + (width * 0.005), bar.get_y() + bar.get_height() / 2,
+                     f'{int(width):,}', va='center', fontsize=10, fontweight='bold')
+
+        plt.title(title, fontsize=14, fontweight='bold')
+        plt.xlabel("Кількість випадків", fontsize=12)
+        plt.ylabel("Локація", fontsize=12)
+        plt.grid(axis='x', linestyle=':', alpha=0.6)
+
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q2_V_Street_Crimes(BaseQuestion): #Вадим
+    """filter, group by"""
+    def execute(self, df, spark=None):
+        return df.filter(F.col("Location Description") == "STREET") \
+            .groupBy("Primary Type").count() \
+            .orderBy(F.desc("count"))
+
+    def draw_plot(self, pdf, title, path):
+        top_pdf = pdf.head(15)
+
+        plt.figure(figsize=(12, 8))
+
+        bars = plt.barh(top_pdf["Primary Type"], top_pdf["count"],
+                        color='slategray', edgecolor='black', alpha=0.9)
+
+        plt.gca().invert_yaxis()
+
+        for bar in bars:
+            width = bar.get_width()
+            plt.text(width + (width * 0.01), bar.get_y() + bar.get_height() / 2,
+                     f'{int(width):,}', va='center', fontsize=10, fontweight='bold')
+
+        plt.title(title + " (Top 15)", fontsize=14, fontweight='bold')
+        plt.xlabel("Кількість випадків", fontsize=12)
+        plt.ylabel("Тип злочину", fontsize=12)
+        plt.grid(axis='x', linestyle='--', alpha=0.5)
+
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q3_V_Day_Crimes(BaseQuestion): #Вадим
+    """filter, group by"""
+    def execute(self, df, spark=None):
+        return df.filter((F.col("hour") >= 12) & (F.col("hour") < 18)) \
+            .groupBy("Primary Type").count() \
+            .orderBy(F.desc("count"))
+
+    def draw_plot(self, pdf, title, path):
+        top_pdf = pdf.head(15)
+
+        plt.figure(figsize=(12, 8))
+
+        bars = plt.barh(top_pdf["Primary Type"], top_pdf["count"],
+                        color='gold', edgecolor='darkgoldenrod', alpha=0.9)
+
+        plt.gca().invert_yaxis()
+
+        for bar in bars:
+            width = bar.get_width()
+            plt.text(width + (width * 0.01), bar.get_y() + bar.get_height() / 2,
+                     f'{int(width):,}', va='center', fontsize=10, fontweight='bold')
+
+        plt.title(f"{title} (Top 15)", fontsize=14, fontweight='bold')
+        plt.xlabel("Кількість випадків", fontsize=12)
+        plt.ylabel("Тип злочину", fontsize=12)
+        plt.grid(axis='x', linestyle='--', alpha=0.4)
+
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q4_V_Cumulative_Arrests_By_Year(BaseQuestion): #Вадим
+    """filter, group by, window"""
+    def execute(self, df):
+        df_year = df.filter(F.col("Arrest") == True) \
+            .withColumn("Year", F.date_format(F.col("Date"), "yyyy"))
+
+        grouped = df_year.groupBy("Year").count()
+
+        window_spec = Window.orderBy("Year").rowsBetween(Window.unboundedPreceding, Window.currentRow)
+        return grouped.withColumn("cumulative_arrests", F.sum("count").over(window_spec)) \
+            .orderBy("Year")
+
+    def draw_plot(self, pdf, title, path):
+        plt.figure(figsize=(12, 6))
+
+        plt.plot(pdf["Year"], pdf["cumulative_arrests"], color='green', marker='o', linewidth=2)
+        plt.fill_between(pdf["Year"], pdf["cumulative_arrests"], color='green', alpha=0.2)
+
+        plt.title("Накопичувальна кількість арештів по роках")
+        plt.xlabel("Рік")
+        plt.ylabel("Кількість арештів")
+
+        plt.xticks(pdf["Year"], rotation=45)
+
+        plt.grid(True, alpha=0.6)
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q5_V_High_Crime_Beats_Vs_Avg(BaseQuestion): #Вадим
+    """filter, group by, join"""
+    def execute(self, df):
+        beat_counts = df.filter(F.col("Beat").isNotNull()).groupBy("Beat").count()
+
+        avg_df = beat_counts.select(F.avg("count").alias("avg_count"))
+
+        return beat_counts.crossJoin(avg_df) \
+            .filter(F.col("count") > F.col("avg_count")) \
+            .orderBy(F.desc("count")).limit(15)
+
+    def draw_plot(self, pdf, title, path):
+        plt.figure(figsize=(12, 6))
+        plt.bar(pdf["Beat"].astype(str), pdf["count"], color='darkred')
+        plt.axhline(y=pdf["avg_count"].iloc[0], color='black', linestyle='--', label='Середнє по місту')
+        plt.title("Beat з найвищою злочинністю (вище середнього)")
+        plt.xlabel("Beat")
+        plt.ylabel("Кількість злочинів")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q6_V_FBI_Code_Arrest_Success(BaseQuestion): #Вадим
+    """filter, group by, join, window"""
+    def execute(self, df):
+        total_fbi = df.filter(F.col("FBI Code").isNotNull()).groupBy("FBI Code").count().withColumnRenamed("count", "total")
+        arrest_fbi = df.filter((F.col("FBI Code").isNotNull()) & (F.col("Arrest") == True)) \
+            .groupBy("FBI Code").count().withColumnRenamed("count", "arrests")
+
+        joined = total_fbi.join(arrest_fbi, "FBI Code") \
+            .withColumn("success_rate", (F.col("arrests") / F.col("total")) * 100)
+
+        window_spec = Window.orderBy(F.desc("success_rate"))
+        return joined.withColumn("rank", F.dense_rank().over(window_spec)) \
+            .filter(F.col("total") > 100) \
+            .orderBy("rank").limit(12)
+
+    def draw_plot(self, pdf, title, path):
+        plt.figure(figsize=(12, 6))
+        bars = plt.bar(pdf["FBI Code"], pdf["success_rate"], color='gold', edgecolor='black')
+        plt.title("Топ-12 FBI Codes за рівнем успішних арештів (>100 випадків)")
+        plt.xlabel("FBI Code")
+        plt.ylabel("Відсоток успішних арештів (%)")
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width()/2., height + 1,
+                     f'{height:.1f}%', ha='center', va='bottom', fontsize=9)
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
