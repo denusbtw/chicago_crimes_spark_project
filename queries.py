@@ -4,6 +4,8 @@ import os
 import glob
 import shutil
 import matplotlib.pyplot as plt
+import calendar
+import numpy as np
 
 
 def get_lookup_tables(spark):
