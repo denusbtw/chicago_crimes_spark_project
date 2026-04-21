@@ -394,3 +394,188 @@ class Q6_J_Most_Dangerous_Blocks_Share(BaseQuestion):
         plt.tight_layout()
         plt.savefig(path)
         plt.close()
+
+
+class Q1_M_Arrest_By_Type(BaseQuestion): 
+    """filter, group by"""
+    def execute(self, df, spark=None):
+        return df.filter(F.col("Arrest") == "true") \
+            .groupBy("Primary Type").count() \
+            .orderBy(F.desc("count"))
+
+    def draw_plot(self, pdf, title, path):
+        top_pdf = pdf.head(20)
+
+        plt.figure(figsize=(12, 9))
+
+        bars = plt.barh(top_pdf["Primary Type"], top_pdf["count"],
+                        color='forestgreen', edgecolor='black', alpha=0.8)
+
+        plt.gca().invert_yaxis()
+
+        for bar in bars:
+            width = bar.get_width()
+            plt.text(width + (width * 0.01), bar.get_y() + bar.get_height() / 2,
+                     f'{int(width):,}', va='center', fontsize=10, fontweight='bold')
+
+        plt.title(title + " (Top 20)", fontsize=14, fontweight='bold')
+        plt.xlabel("Кількість арештів", fontsize=12)
+        plt.ylabel("Тип злочину", fontsize=12)
+        plt.grid(axis='x', linestyle='--', alpha=0.5)
+
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q2_M_Arrest_Share_2025(BaseQuestion): 
+    """window"""
+    def execute(self, df, spark=None):
+        window_spec = Window.partitionBy("Primary Type")
+
+        return df.withColumn("Year", F.year(F.to_timestamp("Date", "MM/dd/yyyy hh:mm:ss a"))) \
+            .filter(F.col("Year") == 2025) \
+            .groupBy("Primary Type", "Arrest") \
+            .count() \
+            .withColumn("total_count", F.sum("count").over(window_spec)) \
+            .withColumn("share", F.col("count") / F.col("total_count")) \
+            .filter(F.col("Arrest") == "true") \
+            .select("Primary Type", "share") \
+            .orderBy(F.desc("share"))
+
+    def draw_plot(self, pdf, title, path):
+        top_pdf = pdf.head(20)
+        plt.figure(figsize=(12, 9))
+
+        plt.hlines(y=top_pdf["Primary Type"], xmin=0, xmax=top_pdf["share"], color='grey', alpha=0.5)
+        plt.scatter(top_pdf["share"], top_pdf["Primary Type"], color='darkcyan', s=100, edgecolors='black')
+
+        plt.gca().invert_yaxis()
+        plt.title(title + " (Lollipop Chart)", fontsize=14, fontweight='bold')
+        plt.xlabel("Частка арештів")
+        plt.grid(axis='x', linestyle='--', alpha=0.3)
+
+        for i, row in top_pdf.iterrows():
+            plt.text(row['share'] + 0.01, i, f'{row["share"]*100:.1f}%', va='center')
+
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q3_M_Weekday_Vs_Weekend_By_District(BaseQuestion):
+    """filter, group by, join"""
+    def execute(self, df):
+        df = df.withColumn("day_of_week", F.date_format(F.col("Date"), "E"))
+
+        df_weekend = df.filter(F.col("day_of_week").isin("Sat", "Sun", "Сб", "Нд")) \
+            .groupBy("District").count().withColumnRenamed("count", "weekend_count")
+
+        df_weekday = df.filter(~F.col("day_of_week").isin("Sat", "Sun", "Сб", "Нд")) \
+            .groupBy("District").count().withColumnRenamed("count", "weekday_count")
+
+        return df_weekend.join(df_weekday, "District").orderBy(F.desc("weekend_count")).limit(10)
+
+    def draw_plot(self, pdf, title, path):
+        x = np.arange(len(pdf["District"]))
+        width = 0.35
+
+        plt.figure(figsize=(12, 6))
+        plt.bar(x - width/2, pdf["weekday_count"], width, label='Будні', color='skyblue')
+        plt.bar(x + width/2, pdf["weekend_count"], width, label='Вихідні', color='salmon')
+
+        plt.title("Злочини: Будні vs Вихідні (Топ-10 District)")
+        plt.xlabel("District")
+        plt.ylabel("Кількість злочинів")
+        plt.xticks(x, pdf["District"])
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q4_M_Domestic_Vs_NonDomestic_Streets(BaseQuestion): 
+    """filter, group by, join, window"""
+    def execute(self, df):
+        df_dom = df.filter(F.col("Domestic") == True).groupBy("street_name").count().withColumnRenamed("count", "domestic")
+        df_non = df.filter(F.col("Domestic") == False).groupBy("street_name").count().withColumnRenamed("count", "non_domestic")
+
+        joined = df_dom.join(df_non, "street_name") \
+            .withColumn("total", F.col("domestic") + F.col("non_domestic"))
+
+        window_spec = Window.orderBy(F.desc("total"))
+        return joined.withColumn("rank", F.rank().over(window_spec)) \
+            .filter(F.col("rank") <= 10).orderBy("rank")
+
+    def draw_plot(self, pdf, title, path):
+        plt.figure(figsize=(12, 8))
+        plt.barh(pdf["street_name"], pdf["non_domestic"], color='lightblue', label='Недомашні')
+        plt.barh(pdf["street_name"], pdf["domestic"], left=pdf["non_domestic"], color='orange', label='Домашні')
+        plt.gca().invert_yaxis()
+        plt.title("Домашні та Недомашні злочини на Топ-10 вулицях")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q5_M_Crime_Type_Rank_In_Community(BaseQuestion): 
+    """filter, group by, window"""
+    def execute(self, df):
+        filtered = df.filter(F.col("Community Area") == 40) \
+            .groupBy("Primary Type").count()
+
+        window_spec = Window.orderBy(F.desc("count"))
+        return filtered.withColumn("rank", F.dense_rank().over(window_spec)) \
+            .filter(F.col("rank") <= 10).orderBy("rank")
+
+    def draw_plot(self, pdf, title, path):
+        pdf_sorted = pdf.sort_values(by="count", ascending=True)
+
+        plt.figure(figsize=(10, 6))
+        bars = plt.barh(pdf_sorted["Primary Type"], pdf_sorted["count"], color='magenta', edgecolor='black')
+
+        plt.title("Топ-10 злочинів у Community Area 40")
+        plt.xlabel("Кількість злочинів")
+        plt.ylabel("Тип злочину")
+
+        for bar in bars:
+            width = bar.get_width()
+            plt.text(width + (max(pdf_sorted["count"]) * 0.01), bar.get_y() + bar.get_height()/2, 
+                     f'{int(width):,}', va='center', fontsize=10)
+
+        plt.grid(axis='x', linestyle='--', alpha=0.6)
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
+
+
+class Q6_M_Hourly_All_City(BaseQuestion):
+    """group by"""
+    def execute(self, df, spark=None):
+        return df.groupBy("hour").count().orderBy("hour")
+
+    def draw_plot(self, pdf, title, path):
+        plt.figure(figsize=(10, 10))
+
+        angles = [n / 24.0 * 2 * np.pi for n in pdf["hour"].astype(float)]
+
+        angles += angles[:1]
+        values = pdf["count"].tolist()
+        values += values[:1]
+
+        ax = plt.subplot(111, projection='polar')
+
+        ax.plot(angles, values, color='darkorange', linewidth=2, label='Кількість злочинів')
+        ax.fill(angles, values, color='orange', alpha=0.3)
+
+        ax.set_theta_offset(np.pi / 2)
+        ax.set_theta_direction(-1)
+
+        ax.set_xticks(np.linspace(0, 2 * np.pi, 24, endpoint=False))
+        ax.set_xticklabels([f"{h}h" for h in range(24)])
+
+        plt.title(title, fontsize=15, fontweight='bold', pad=20)
+        plt.tight_layout()
+        plt.savefig(path)
+        plt.close()
