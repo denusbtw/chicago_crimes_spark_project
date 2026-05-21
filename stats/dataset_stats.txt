@@ -1,0 +1,178 @@
+===== SCHEMA =====
+root
+ |-- ID: integer (nullable = true)
+ |-- Case Number: string (nullable = true)
+ |-- Date: timestamp (nullable = true)
+ |-- Block: string (nullable = true)
+ |-- IUCR: string (nullable = true)
+ |-- Primary Type: string (nullable = true)
+ |-- Description: string (nullable = true)
+ |-- Location Description: string (nullable = true)
+ |-- Arrest: boolean (nullable = true)
+ |-- Domestic: boolean (nullable = true)
+ |-- Beat: integer (nullable = true)
+ |-- District: integer (nullable = true)
+ |-- Ward: integer (nullable = true)
+ |-- Community Area: integer (nullable = true)
+ |-- FBI Code: string (nullable = true)
+ |-- X Coordinate: integer (nullable = true)
+ |-- Y Coordinate: integer (nullable = true)
+ |-- Year: integer (nullable = true)
+ |-- Updated On: timestamp (nullable = true)
+ |-- Latitude: double (nullable = true)
+ |-- Longitude: double (nullable = true)
+ |-- Location: string (nullable = true)
+
+===== ROW COUNT =====
+8495400
+===== COLUMN COUNT =====
+22
+===== SAMPLE =====
++--------+-----------+-------------------+-----------------------------------+----+---------------+--------------+--------------------+------+--------+----+--------+----+--------------+--------+------------+------------+----+-------------------+------------+-------------+-----------------------------+
+|ID      |Case Number|Date               |Block                              |IUCR|Primary Type   |Description   |Location Description|Arrest|Domestic|Beat|District|Ward|Community Area|FBI Code|X Coordinate|Y Coordinate|Year|Updated On         |Latitude    |Longitude    |Location                     |
++--------+-----------+-------------------+-----------------------------------+----+---------------+--------------+--------------------+------+--------+----+--------+----+--------------+--------+------------+------------+----+-------------------+------------+-------------+-----------------------------+
+|14104101|JK141364   |2026-02-07 00:00:00|001XX N WABASH AVE                 |0810|THEFT          |OVER $500     |RESTAURANT          |false |false   |111 |1       |42  |32            |06      |1176785     |1901611     |2026|2026-02-14 15:41:20|41.885367342|-87.626266013|(41.885367342, -87.626266013)|
+|14109735|JK148341   |2026-02-07 00:00:00|055XX S SHORE DR                   |1320|CRIMINAL DAMAGE|TO VEHICLE    |STREET              |false |false   |235 |2       |5   |41            |14      |NULL        |NULL        |2026|2026-02-14 15:41:20|NULL        |NULL         |NULL                         |
+|14104578|JK141890   |2026-02-07 00:00:00|0000X S STATE ST                   |0860|THEFT          |RETAIL THEFT  |SMALL RETAIL STORE  |false |false   |112 |1       |34  |32            |06      |1176389     |1900278     |2026|2026-02-14 15:41:20|41.88171846 |-87.627760426|(41.88171846, -87.627760426) |
+|14105130|JK142716   |2026-02-07 00:00:00|015XX W FRY ST                     |0820|THEFT          |$500 AND UNDER|APARTMENT           |false |false   |1213|12      |1   |24            |06      |1165982     |1905745     |2026|2026-02-14 15:41:20|41.896948746|-87.665818276|(41.896948746, -87.665818276)|
+|14104868|JK141697   |2026-02-07 00:00:00|083XX S DR MARTIN LUTHER KING JR DR|1310|CRIMINAL DAMAGE|TO PROPERTY   |RESIDENCE           |false |false   |632 |6       |6   |44            |14      |1180368     |1849746     |2026|2026-02-14 15:41:20|41.742963833|-87.614701485|(41.742963833, -87.614701485)|
++--------+-----------+-------------------+-----------------------------------+----+---------------+--------------+--------------------+------+--------+----+--------+----+--------------+--------+------------+------------+----+-------------------+------------+-------------+-----------------------------+
+only showing top 5 rows
+
+===== DATA TYPES DISTRIBUTION =====
+int: 8
+string: 8
+timestamp: 2
+boolean: 2
+double: 2
+===== NUMERIC VS NON-NUMERIC =====
+Numeric columns: 10
+Non-numeric columns: 12
+===== FILE SIZE ON DISK =====
+Source file size: 2.199 GB
+===== TOTAL NULL VALUES (BY COLUMN) =====
++------+----+-----+-----------+--------------+----+-----------+--------+--------+--------+---+----+--------+--------+--------------------+---------+------------+----------+------+------------+------------+----+
+|Arrest|Beat|Block|Case Number|Community Area|Date|Description|District|Domestic|FBI Code|ID |IUCR|Latitude|Location|Location Description|Longitude|Primary Type|Updated On|Ward  |X Coordinate|Y Coordinate|Year|
++------+----+-----+-----------+--------------+----+-----------+--------+--------+--------+---+----+--------+--------+--------------------+---------+------------+----------+------+------------+------------+----+
+|0     |0   |0    |0          |613685        |0   |0          |47      |0       |0       |0  |0   |94616   |94616   |15583               |94616    |0           |0         |614818|94616       |94616       |0   |
++------+----+-----+-----------+--------------+----+-----------+--------+--------+--------+---+----+--------+--------+--------------------+---------+------------+----------+------+------------+------------+----+
+
+NUMERIC COLUMNS: ['ID', 'Beat', 'District', 'Ward', 'Community Area', 'X Coordinate', 'Y Coordinate', 'Year', 'Latitude', 'Longitude']
++-------+-----------------+-----------------+------------------+------------------+------------------+------------------+-----------------+------------------+-------------------+-------------------+
+|summary|               ID|             Beat|          District|              Ward|    Community Area|      X Coordinate|     Y Coordinate|              Year|           Latitude|          Longitude|
++-------+-----------------+-----------------+------------------+------------------+------------------+------------------+-----------------+------------------+-------------------+-------------------+
+|  count|          8495400|          8495400|           8495353|           7880582|           7881715|           8400784|          8400784|           8495400|            8400784|            8400784|
+|   mean|7571683.345270617|1183.200717917932|11.295428453649896|22.787032226807614| 37.37122415616398|1164665.7491809097|1885921.853393207|2011.1266998611013|  41.84256350886704| -87.67125155308702|
+| stddev|   3813096.584679|703.7698875816251| 6.964541472276115|13.859232855688326|21.546789353651604|16946.724320027468|32422.44611271188| 7.163922077977586|0.08920471790024341|0.06141469272805431|
+|    min|              634|              111|                 1|                 1|                 0|                 0|                0|              2001|       36.619446395|      -91.686565684|
+|    max|         14110428|             2535|                31|                50|                77|           1205119|          1951622|              2026|       42.022910333|      -87.524529378|
++-------+-----------------+-----------------+------------------+------------------+------------------+------------------+-----------------+------------------+-------------------+-------------------+
+
+Пропущені значення по колонках:
++------+----+-----+-----------+--------------+----+-----------+--------+--------+--------+---+----+--------+--------+--------------------+---------+------------+----------+------+------------+------------+----+
+|Arrest|Beat|Block|Case Number|Community Area|Date|Description|District|Domestic|FBI Code|ID |IUCR|Latitude|Location|Location Description|Longitude|Primary Type|Updated On|Ward  |X Coordinate|Y Coordinate|Year|
++------+----+-----+-----------+--------------+----+-----------+--------+--------+--------+---+----+--------+--------+--------------------+---------+------------+----------+------+------------+------------+----+
+|0     |0   |0    |0          |613685        |0   |0          |47      |0       |0       |0  |0   |94616   |94616   |15583               |94616    |0           |0         |614818|94616       |94616       |0   |
++------+----+-----+-----------+--------------+----+-----------+--------+--------+--------+---+----+--------+--------+--------------------+---------+------------+----------+------+------------+------------+----+
+
+Відсоток пропусків по колонках:
++------+----+-----+-----------+-----------------+----+-----------+--------------------+--------+--------+---+----+------------------+------------------+--------------------+------------------+------------+----------+-----------------+------------------+------------------+----+
+|Arrest|Beat|Block|Case Number|Community Area   |Date|Description|District            |Domestic|FBI Code|ID |IUCR|Latitude          |Location          |Location Description|Longitude         |Primary Type|Updated On|Ward             |X Coordinate      |Y Coordinate      |Year|
++------+----+-----+-----------+-----------------+----+-----------+--------------------+--------+--------+---+----+------------------+------------------+--------------------+------------------+------------+----------+-----------------+------------------+------------------+----+
+|0.0   |0.0 |0.0  |0.0        |7.223732843656568|0.0 |0.0        |5.532405772535725E-4|0.0     |0.0     |0.0|0.0 |1.1137321373920004|1.1137321373920004|0.18342867904983873 |1.1137321373920004|0.0         |0.0       |7.237069472891211|1.1137321373920004|1.1137321373920004|0.0 |
++------+----+-----+-----------+-----------------+----+-----------+--------------------+--------+--------+---+----+------------------+------------------+--------------------+------------------+------------+----------+-----------------+------------------+------------------+----+
+
+Кількість дублікатів: 0
+===== FEATURE INFORMATIVENESS ANALYSIS =====
+
+--- Column: ID (int) ---
+Variance: 14539705564090.656
+Stddev: 3813096.584679
+
+--- Column: Case Number (string) ---
+Distinct values: 8494792
+Most frequent value: HZ140230
+Dominance ratio: 0.0
+
+--- Column: Date (timestamp) ---
+Skipped (boolean/timestamp).
+
+--- Column: Block (string) ---
+Distinct values: 65613
+Most frequent value: 001XX N STATE ST
+Dominance ratio: 0.002
+
+--- Column: IUCR (string) ---
+Distinct values: 418
+Most frequent value: 0820
+Dominance ratio: 0.0802
+
+--- Column: Primary Type (string) ---
+Distinct values: 34
+Most frequent value: THEFT
+Dominance ratio: 0.2124
+
+--- Column: Description (string) ---
+Distinct values: 569
+Most frequent value: SIMPLE
+Dominance ratio: 0.1176
+
+--- Column: Location Description (string) ---
+Distinct values: 218
+Most frequent value: STREET
+Dominance ratio: 0.2613
+
+--- Column: Arrest (boolean) ---
+Skipped (boolean/timestamp).
+
+--- Column: Domestic (boolean) ---
+Skipped (boolean/timestamp).
+
+--- Column: Beat (int) ---
+Variance: 495292.0546666533
+Stddev: 703.7698875816251
+
+--- Column: District (int) ---
+Variance: 48.50483791905395
+Stddev: 6.964541472276115
+
+--- Column: Ward (int) ---
+Variance: 192.0783353481908
+Stddev: 13.859232855688326
+
+--- Column: Community Area (int) ---
+Variance: 464.26413145063407
+Stddev: 21.546789353651604
+
+--- Column: FBI Code (string) ---
+Distinct values: 26
+Most frequent value: 06
+Dominance ratio: 0.213
+
+--- Column: X Coordinate (int) ---
+Variance: 287191465.17901045
+Stddev: 16946.724320027468
+
+--- Column: Y Coordinate (int) ---
+Variance: 1051215011.9317057
+Stddev: 32422.44611271188
+
+--- Column: Year (int) ---
+Variance: 51.321779539334685
+Stddev: 7.163922077977586
+
+--- Column: Updated On (timestamp) ---
+Skipped (boolean/timestamp).
+
+--- Column: Latitude (double) ---
+Variance: 0.007957481695662006
+Stddev: 0.08920471790024341
+
+--- Column: Longitude (double) ---
+Variance: 0.0037717644828813273
+Stddev: 0.06141469272805431
+
+--- Column: Location (string) ---
+Distinct values: 911713
+Most frequent value: None
+Dominance ratio: 0.0111

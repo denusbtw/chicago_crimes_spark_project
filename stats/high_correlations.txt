@@ -1,0 +1,5 @@
+High correlations (|r| > 0.9)
+ID <-> Year: 0.9826998519092666
+Beat <-> District: 0.9558076821001826
+X Coordinate <-> Longitude: 0.9998351079123972
+Y Coordinate <-> Latitude: 0.9999938321836541

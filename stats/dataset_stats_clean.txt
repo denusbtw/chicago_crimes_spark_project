@@ -1,0 +1,146 @@
+===== SCHEMA =====
+root
+ |-- District: integer (nullable = true)
+ |-- Ward: integer (nullable = true)
+ |-- Community Area: integer (nullable = true)
+ |-- Beat: integer (nullable = true)
+ |-- Primary Type: string (nullable = true)
+ |-- Description: string (nullable = true)
+ |-- Date: timestamp (nullable = true)
+ |-- Block: string (nullable = true)
+ |-- IUCR: string (nullable = true)
+ |-- Location Description: string (nullable = true)
+ |-- Arrest: boolean (nullable = true)
+ |-- Domestic: boolean (nullable = true)
+ |-- FBI Code: string (nullable = true)
+ |-- Updated On: timestamp (nullable = true)
+ |-- Latitude: double (nullable = true)
+ |-- Longitude: double (nullable = true)
+
+===== ROW COUNT =====
+7878919
+===== COLUMN COUNT =====
+16
+===== SAMPLE =====
++--------+----+--------------+----+---------------+--------------+-------------------+---------------------+----+--------------------------------------+------+--------+--------+-------------------+------------+-------------+
+|District|Ward|Community Area|Beat|Primary Type   |Description   |Date               |Block                |IUCR|Location Description                  |Arrest|Domestic|FBI Code|Updated On         |Latitude    |Longitude    |
++--------+----+--------------+----+---------------+--------------+-------------------+---------------------+----+--------------------------------------+------+--------+--------+-------------------+------------+-------------+
+|25      |31  |22            |2524|THEFT          |$500 AND UNDER|2025-12-20 00:00:00|026XX N PULASKI RD   |0820|OTHER (SPECIFY)                       |false |false   |06      |2026-01-03 15:40:45|41.928950523|-87.726899566|
+|25      |31  |22            |2524|THEFT          |$500 AND UNDER|2025-07-05 05:30:00|025XX N PULASKI RD   |0820|GAS STATION                           |false |false   |06      |2025-11-02 15:41:09|41.927235118|-87.726849666|
+|25      |31  |22            |2524|THEFT          |$500 AND UNDER|2024-09-18 07:15:00|040XX W FULLERTON AVE|0820|SIDEWALK                              |false |false   |06      |2025-05-17 15:40:52|41.924476872|-87.727313071|
+|25      |31  |22            |2524|CRIMINAL DAMAGE|TO PROPERTY   |2025-07-24 18:00:00|026XX N PULASKI RD   |1310|PARKING LOT / GARAGE (NON RESIDENTIAL)|false |false   |14      |2025-11-02 15:41:09|41.928799559|-87.726893646|
+|25      |31  |22            |2524|CRIMINAL DAMAGE|TO PROPERTY   |2025-06-29 23:00:00|025XX N PULASKI RD   |1310|GAS STATION                           |false |false   |14      |2025-11-02 15:41:09|41.927235118|-87.726849666|
++--------+----+--------------+----+---------------+--------------+-------------------+---------------------+----+--------------------------------------+------+--------+--------+-------------------+------------+-------------+
+only showing top 5 rows
+
+===== DATA TYPES DISTRIBUTION =====
+int: 4
+string: 6
+timestamp: 2
+boolean: 2
+double: 2
+===== NUMERIC VS NON-NUMERIC =====
+Numeric columns: 6
+Non-numeric columns: 10
+===== FILE SIZE ON DISK =====
+Source directory size: 0.159 GB
+===== TOTAL NULL VALUES (BY COLUMN) =====
++------+----+-----+--------------+----+-----------+--------+--------+--------+----+--------+--------------------+---------+------------+----------+----+
+|Arrest|Beat|Block|Community Area|Date|Description|District|Domestic|FBI Code|IUCR|Latitude|Location Description|Longitude|Primary Type|Updated On|Ward|
++------+----+-----+--------------+----+-----------+--------+--------+--------+----+--------+--------------------+---------+------------+----------+----+
+|0     |0   |0    |0             |0   |0          |0       |0       |0       |0   |0       |0                   |0        |0           |0         |0   |
++------+----+-----+--------------+----+-----------+--------+--------+--------+----+--------+--------------------+---------+------------+----------+----+
+
+NUMERIC COLUMNS: ['District', 'Ward', 'Community Area', 'Beat', 'Latitude', 'Longitude']
++-------+------------------+------------------+------------------+------------------+-------------------+------------------+
+|summary|          District|              Ward|    Community Area|              Beat|           Latitude|         Longitude|
++-------+------------------+------------------+------------------+------------------+-------------------+------------------+
+|  count|           7878919|           7878919|           7878919|           7878919|            7878919|           7878919|
+|   mean|11.290825048461597|22.786760214186742| 37.35927352470561|1179.7944229405075|  41.84249230613599|-87.67119627818943|
+| stddev|  6.96091324300131|13.859114797781311|21.538771510628255| 703.0923403941365|0.08649899187836142|0.0591065147571314|
+|    min|                 1|                 1|                 1|               111|       41.644585429|     -87.939732936|
+|    max|                31|                50|                77|              2535|       42.022709624|     -87.524529378|
++-------+------------------+------------------+------------------+------------------+-------------------+------------------+
+
+Пропущені значення по колонках:
++------+----+-----+--------------+----+-----------+--------+--------+--------+----+--------+--------------------+---------+------------+----------+----+
+|Arrest|Beat|Block|Community Area|Date|Description|District|Domestic|FBI Code|IUCR|Latitude|Location Description|Longitude|Primary Type|Updated On|Ward|
++------+----+-----+--------------+----+-----------+--------+--------+--------+----+--------+--------------------+---------+------------+----------+----+
+|0     |0   |0    |0             |0   |0          |0       |0       |0       |0   |0       |0                   |0        |0           |0         |0   |
++------+----+-----+--------------+----+-----------+--------+--------+--------+----+--------+--------------------+---------+------------+----------+----+
+
+Відсоток пропусків по колонках:
++------+----+-----+--------------+----+-----------+--------+--------+--------+----+--------+--------------------+---------+------------+----------+----+
+|Arrest|Beat|Block|Community Area|Date|Description|District|Domestic|FBI Code|IUCR|Latitude|Location Description|Longitude|Primary Type|Updated On|Ward|
++------+----+-----+--------------+----+-----------+--------+--------+--------+----+--------+--------------------+---------+------------+----------+----+
+|0.0%  |0.0%|0.0% |0.0%          |0.0%|0.0%       |0.0%    |0.0%    |0.0%    |0.0%|0.0%    |0.0%                |0.0%     |0.0%        |0.0%      |0.0%|
++------+----+-----+--------------+----+-----------+--------+--------+--------+----+--------+--------------------+---------+------------+----------+----+
+
+Кількість дублікатів: 15137
+===== FEATURE INFORMATIVENESS ANALYSIS =====
+
+--- Column: District (int) ---
+Variance: 48.454313176591015
+Stddev: 6.96091324300131
+
+--- Column: Ward (int) ---
+Variance: 192.0750629780809
+Stddev: 13.859114797781311
+
+--- Column: Community Area (int) ---
+Variance: 463.9186781870514
+Stddev: 21.538771510628255
+
+--- Column: Beat (int) ---
+Variance: 494338.8391209043
+Stddev: 703.0923403941365
+
+--- Column: Primary Type (string) ---
+Distinct values: 33
+Most frequent value: THEFT
+Dominance ratio: 0.2134
+
+--- Column: Description (string) ---
+Distinct values: 568
+Most frequent value: SIMPLE
+Dominance ratio: 0.1108
+
+--- Column: Date (timestamp) ---
+Skipped (boolean/timestamp).
+
+--- Column: Block (string) ---
+Distinct values: 41367
+Most frequent value: 001XX N STATE ST
+Dominance ratio: 0.002
+
+--- Column: IUCR (string) ---
+Distinct values: 417
+Most frequent value: 0486
+Dominance ratio: 0.0842
+
+--- Column: Location Description (string) ---
+Distinct values: 219
+Most frequent value: STREET
+Dominance ratio: 0.2576
+
+--- Column: Arrest (boolean) ---
+Skipped (boolean/timestamp).
+
+--- Column: Domestic (boolean) ---
+Skipped (boolean/timestamp).
+
+--- Column: FBI Code (string) ---
+Distinct values: 26
+Most frequent value: 06
+Dominance ratio: 0.214
+
+--- Column: Updated On (timestamp) ---
+Skipped (boolean/timestamp).
+
+--- Column: Latitude (double) ---
+Variance: 0.007482075595972835
+Stddev: 0.08649899187836142
+
+--- Column: Longitude (double) ---
+Variance: 0.0034935800867349916
+Stddev: 0.0591065147571314

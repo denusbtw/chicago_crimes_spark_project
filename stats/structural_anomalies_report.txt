@@ -1,0 +1,8 @@
+===== STRUCTURAL ANOMALY REPORT =====
+Total rows: 8495400
+Invalid coordinates: 149
+Invalid District values: 0
+Invalid Ward values: 614818
+Invalid Community Area values: 613761
+Total detected anomalies (raw sum): 1228728
+VERDICT: Structural anomalies detected (14.4635% of data).
